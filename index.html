@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WebIDE — VS Code-like Browser Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --surface3: #21262d;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --sidebar-w: 240px;
+    --panel-h: 220px;
+    --tab-h: 35px;
+    --status-h: 24px;
+    --activity-w: 48px;
+    --titlebar-h: 38px;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-ui: 'Geist', sans-serif;
+  }
+  html, body, #root { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
+
+  /* TITLEBAR */
+  .titlebar {
+    height: var(--titlebar-h);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .titlebar-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; letter-spacing: -0.3px; }
+  .logo-icon { width: 20px; height: 20px; background: linear-gradient(135deg, var(--accent), var(--accent4)); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
+  .titlebar-menu { display: flex; gap: 2px; margin-left: 8px; }
+  .menu-item { padding: 3px 8px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 4px; transition: all 0.15s; position: relative; }
+  .menu-item:hover { background: var(--surface3); color: var(--text); }
+  .titlebar-center { flex: 1; display: flex; justify-content: center; }
+  .titlebar-breadcrumb { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 6px; }
+  .titlebar-actions { display: flex; gap: 4px; }
+  .titlebar-btn { padding: 4px 10px; font-size: 11px; font-family: var(--font-ui); border: 1px solid var(--border); background: var(--surface3); color: var(--text2); border-radius: 5px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+  .titlebar-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .titlebar-btn.green:hover { background: var(--accent2); border-color: var(--accent2); color: #000; }
+
+  /* LAYOUT */
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  .workbench { display: flex; flex: 1; overflow: hidden; }
+
+  /* ACTIVITY BAR */
+  .activity-bar {
+    width: var(--activity-w);
+    background: var(--bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .activity-icon {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; cursor: pointer;
+    color: var(--text3); font-size: 18px;
+    transition: all 0.15s; position: relative;
+  }
+  .activity-icon:hover { color: var(--text); background: var(--surface3); }
+  .activity-icon.active { color: var(--text); background: var(--surface2); border: 1px solid var(--border); }
+  .activity-icon.active::before { content:''; position:absolute; left:-1px; top:50%; transform:translateY(-50%); width:2px; height:20px; background:var(--accent); border-radius:0 2px 2px 0; }
+  .activity-spacer { flex: 1; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 8px 12px 6px;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.8px; text-transform: uppercase;
+    color: var(--text3);
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header-actions { display: flex; gap: 4px; }
+  .icon-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 14px; line-height: 1; transition: all 0.1s; }
+  .icon-btn:hover { color: var(--text); background: var(--surface3); }
+  .sidebar-content { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .sidebar-content::-webkit-scrollbar { width: 4px; }
+  .sidebar-content::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* FILE TREE */
+  .file-tree-item {
+    display: flex; align-items: center;
+    padding: 2px 4px 2px 0;
+    cursor: pointer; font-size: 12.5px;
+    color: var(--text2); border-radius: 4px;
+    transition: background 0.1s;
+    user-select: none;
+    position: relative;
+  }
+  .file-tree-item:hover { background: var(--surface3); color: var(--text); }
+  .file-tree-item.selected { background: rgba(88,166,255,0.1); color: var(--text); }
+  .file-tree-item.renamed { background: rgba(63,185,80,0.1); }
+  .file-indent { display: inline-block; width: 12px; flex-shrink: 0; }
+  .file-caret { width: 16px; text-align: center; font-size: 10px; flex-shrink: 0; transition: transform 0.15s; color: var(--text3); }
+  .file-caret.open { transform: rotate(90deg); }
+  .file-icon { margin-right: 5px; font-size: 13px; }
+  .file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-name-input { background: var(--surface3); border: 1px solid var(--accent); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 0 4px; border-radius: 3px; outline: none; width: 140px; }
+
+  /* TABS */
+  .tabs-bar {
+    height: var(--tab-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .tabs-bar::-webkit-scrollbar { height: 3px; }
+  .tabs-bar::-webkit-scrollbar-thumb { background: var(--border); }
+  .tab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 0 12px; min-width: 100px; max-width: 180px;
+    border-right: 1px solid var(--border);
+    cursor: pointer; font-size: 12px;
+    color: var(--text3); white-space: nowrap;
+    position: relative; flex-shrink: 0;
+    transition: background 0.1s;
+    background: var(--surface);
+  }
+  .tab:hover { background: var(--surface2); color: var(--text2); }
+  .tab.active { background: var(--bg); color: var(--text); border-bottom: 2px solid var(--accent); }
+  .tab-icon { font-size: 12px; }
+  .tab-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .tab-close { opacity: 0; font-size: 14px; padding: 0 2px; border-radius: 3px; transition: all 0.1s; }
+  .tab:hover .tab-close, .tab.active .tab-close { opacity: 1; }
+  .tab-close:hover { background: var(--surface3); color: var(--accent3); }
+  .tab-modified::after { content: '●'; color: var(--accent4); margin-left: 4px; font-size: 8px; }
+
+  /* EDITOR AREA */
+  .editor-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .editor-container { flex: 1; overflow: hidden; position: relative; }
+  #monaco-editor { width: 100%; height: 100%; }
+
+  /* WELCOME SCREEN */
+  .welcome {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 32px;
+    background: var(--bg);
+  }
+  .welcome-logo { font-size: 48px; }
+  .welcome-title { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+  .welcome-subtitle { font-size: 14px; color: var(--text3); margin-top: -24px; }
+  .welcome-actions { display: flex; flex-direction: column; gap: 8px; }
+  .welcome-action { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.15s; width: 280px; }
+  .welcome-action:hover { background: var(--surface3); color: var(--text); border-color: var(--accent); }
+  .welcome-action-icon { font-size: 18px; width: 24px; text-align: center; }
+
+  /* PANEL (Terminal + Output) */
+  .panel {
+    height: var(--panel-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    flex-shrink: 0;
+  }
+  .panel-tabs {
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    padding: 0 8px;
+    flex-shrink: 0;
+  }
+  .panel-tab {
+    padding: 6px 14px; font-size: 12px; cursor: pointer;
+    color: var(--text3); border-bottom: 2px solid transparent;
+    transition: all 0.1s; display: flex; align-items: center; gap: 5px;
+  }
+  .panel-tab:hover { color: var(--text2); }
+  .panel-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .panel-resize-handle { width: 100%; height: 4px; cursor: row-resize; background: transparent; }
+  .panel-resize-handle:hover { background: var(--accent); opacity: 0.3; }
+  .panel-content { flex: 1; overflow-y: auto; padding: 8px 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
+  .panel-content::-webkit-scrollbar { width: 4px; }
+  .panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* TERMINAL */
+  .terminal-line { display: flex; flex-direction: column; margin-bottom: 2px; }
+  .terminal-prompt { color: var(--accent2); display: flex; gap: 6px; }
+  .terminal-prompt-symbol { color: var(--accent4); }
+  .terminal-output { color: var(--text2); white-space: pre-wrap; word-break: break-all; }
+  .terminal-output.error { color: var(--accent3); }
+  .terminal-output.success { color: var(--accent2); }
+  .terminal-output.info { color: var(--accent); }
+  .terminal-input-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .terminal-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-mono); font-size: 12.5px; caret-color: var(--accent2); }
+  .terminal-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent2); animation: blink 1s infinite; vertical-align: text-bottom; }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  /* OUTPUT */
+  .output-frame-wrapper { width: 100%; height: 100%; background: #fff; border-radius: 4px; overflow: hidden; }
+  .output-frame { width: 100%; height: 100%; border: none; }
+
+  /* MINIMAP side panel (npm) */
+  .npm-panel { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .npm-search { display: flex; gap: 6px; }
+  .npm-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 5px 8px; border-radius: 5px; outline: none; }
+  .npm-input:focus { border-color: var(--accent); }
+  .npm-btn { background: var(--accent); border: none; color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+  .npm-btn:hover { opacity: 0.85; }
+  .npm-btn.remove { background: var(--accent3); }
+  .pkg-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
+  .pkg-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface3); border-radius: 5px; font-size: 12px; border: 1px solid var(--border); }
+  .pkg-name { font-family: var(--font-mono); color: var(--accent); }
+  .pkg-version { color: var(--text3); font-size: 11px; }
+  .pkg-actions { display: flex; gap: 4px; }
+  .pkg-action-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 2px; border-radius: 3px; }
+  .pkg-action-btn:hover { color: var(--accent3); background: var(--surface2); }
+
+  /* STATUS BAR */
+  .status-bar {
+    height: var(--status-h);
+    background: var(--accent);
+    display: flex; align-items: center;
+    padding: 0 10px; gap: 16px;
+    flex-shrink: 0; font-size: 11px;
+  }
+  .status-item { display: flex; align-items: center; gap: 4px; color: rgba(255,255,255,0.85); cursor: pointer; padding: 0 4px; border-radius: 3px; }
+  .status-item:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .status-spacer { flex: 1; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); }
+  .status-dot.error { background: var(--accent3); }
+
+  /* CONTEXT MENU */
+  .ctx-menu {
+    position: fixed; z-index: 9999;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 4px; min-width: 160px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    animation: fadeIn 0.1s ease;
+  }
+  .ctx-item { padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; transition: all 0.1s; }
+  .ctx-item:hover { background: var(--surface3); color: var(--text); }
+  .ctx-item.danger:hover { background: rgba(247,129,102,0.15); color: var(--accent3); }
+  .ctx-separator { height: 1px; background: var(--border); margin: 3px 0; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+  .modal { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-width: 360px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: slideUp 0.2s ease; }
+  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .modal-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 8px 12px; border-radius: 6px; outline: none; margin-bottom: 16px; }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .modal-btn { padding: 7px 16px; font-size: 13px; font-family: var(--font-ui); border-radius: 6px; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+  .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .modal-btn.primary:hover { opacity: 0.85; }
+  .modal-btn.cancel { background: var(--surface3); color: var(--text2); }
+  .modal-btn.cancel:hover { color: var(--text); }
+
+  /* NOTIFICATIONS */
+  .notifications { position: fixed; bottom: 32px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+  .notification { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; min-width: 240px; max-width: 320px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.2s ease; }
+  .notification.success { border-left: 3px solid var(--accent2); }
+  .notification.error { border-left: 3px solid var(--accent3); }
+  .notification.info { border-left: 3px solid var(--accent); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* SEARCH PANEL */
+  .search-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .search-input-wrap { position: relative; }
+  .search-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 6px 10px; border-radius: 5px; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-results { display: flex; flex-direction: column; gap: 2px; max-height: 400px; overflow-y: auto; }
+  .search-result-file { font-size: 11px; color: var(--text3); padding: 4px 4px 2px; font-weight: 600; }
+  .search-result-line { font-size: 11.5px; font-family: var(--font-mono); padding: 3px 8px; cursor: pointer; border-radius: 3px; display: flex; gap: 8px; align-items: center; }
+  .search-result-line:hover { background: var(--surface3); }
+  .search-result-num { color: var(--text3); width: 28px; text-align: right; flex-shrink: 0; }
+  .search-result-text { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-result-match { color: var(--accent); background: rgba(88,166,255,0.15); border-radius: 2px; padding: 0 2px; }
+
+  /* AI PANEL */
+  .ai-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; height: 100%; }
+  .ai-header { display: flex; align-items: center; gap: 8px; }
+  .ai-badge { background: linear-gradient(135deg, var(--accent), var(--accent4)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+  .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .ai-msg { padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
+  .ai-msg.user { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.2); color: var(--text2); align-self: flex-end; max-width: 85%; }
+  .ai-msg.assistant { background: var(--surface3); border: 1px solid var(--border); color: var(--text2); max-width: 95%; }
+  .ai-msg.assistant code { font-family: var(--font-mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; color: var(--accent4); font-size: 11px; }
+  .ai-input-row { display: flex; gap: 6px; }
+  .ai-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-ui); font-size: 12px; padding: 7px 10px; border-radius: 6px; outline: none; resize: none; }
+  .ai-input:focus { border-color: var(--accent); }
+  .ai-send-btn { background: var(--accent); border: none; color: #fff; font-family: var(--font-ui); font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  .ai-send-btn:hover { opacity: 0.85; }
+  .ai-placeholder { color: var(--text3); font-size: 12px; text-align: center; padding: 20px 0; line-height: 1.8; }
+
+  /* BREADCRUMB */
+  .breadcrumb { height: 22px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 12px; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-shrink: 0; }
+  .bc-sep { color: var(--border); }
+  .bc-item { cursor: pointer; }
+  .bc-item:hover { color: var(--text2); }
+  .bc-item.last { color: var(--text2); }
+
+  .main-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .editor-panel-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+  /* scrollbar global */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+// ─── FILE SYSTEM ─────────────────────────────────────────────────────────────
+const DEFAULT_FS = {
+  'my-next-app': {
+    type: 'folder', open: true,
+    children: {
+      'package.json': {
+        type: 'file',
+        content: JSON.stringify({
+          name: "my-next-app",
+          version: "0.1.0",
+          scripts: { dev: "next dev", build: "next build", start: "next start" },
+          dependencies: { next: "14.0.0", react: "^18", "react-dom": "^18" },
+          devDependencies: { typescript: "^5", "@types/react": "^18", "@types/node": "^20" }
+        }, null, 2)
+      },
+      'tsconfig.json': {
+        type: 'file',
+        content: JSON.stringify({
+          compilerOptions: { target: "es5", lib: ["dom","es6"], allowJs: true, skipLibCheck: true, strict: true, paths: { "@/*": ["./*"] } },
+          include: ["next-env.d.ts","**/*.ts","**/*.tsx"],
+          exclude: ["node_modules"]
+        }, null, 2)
+      },
+      'app': {
+        type: 'folder', open: true,
+        children: {
+          'page.tsx': {
+            type: 'file',
+            content: `import React from 'react';
+
+export default function Home() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm">
+        <h1 className="text-4xl font-bold text-center mb-8">
+          Welcome to My Next.js App
+        </h1>
+        <p className="text-center text-gray-500">
+          Built with Next.js 14, TypeScript & Tailwind CSS
+        </p>
+      </div>
+    </main>
+  );
+}`
+          },
+          'layout.tsx': {
+            type: 'file',
+            content: `import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'My Next.js App',
+  description: 'Built with Next.js and TypeScript',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
+}`
+          },
+          'globals.css': {
+            type: 'file',
+            content: `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\n:root {\n  --foreground-rgb: 0, 0, 0;\n}\n\nbody {\n  color: rgb(var(--foreground-rgb));\n}`
+          }
+        }
+      },
+      'components': {
+        type: 'folder', open: false,
+        children: {
+          'Button.tsx': {
+            type: 'file',
+            content: `import React from 'react';\n\ninterface ButtonProps {\n  children: React.ReactNode;\n  onClick?: () => void;\n  variant?: 'primary' | 'secondary';\n  disabled?: boolean;\n}\n\nexport const Button: React.FC<ButtonProps> = ({\n  children,\n  onClick,\n  variant = 'primary',\n  disabled = false,\n}) => {\n  return (\n    <button\n      onClick={onClick}\n      disabled={disabled}\n      className={\`px-4 py-2 rounded-lg font-medium transition-all \${\n        variant === 'primary'\n          ? 'bg-blue-500 text-white hover:bg-blue-600'\n          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'\n      } \${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}\`}\n    >\n      {children}\n    </button>\n  );\n};`
+          }
+        }
+      },
+      'lib': {
+        type: 'folder', open: false,
+        children: {
+          'utils.ts': {
+            type: 'file',
+            content: `// Utility functions\n\nexport function cn(...classes: (string | undefined | null | false)[]): string {\n  return classes.filter(Boolean).join(' ');\n}\n\nexport function formatDate(date: Date): string {\n  return new Intl.DateTimeFormat('en-US', {\n    year: 'numeric',\n    month: 'long',\n    day: 'numeric',\n  }).format(date);\n}\n\nexport function debounce<T extends (...args: any[]) => any>(\n  fn: T,\n  delay: number\n): (...args: Parameters<T>) => void {\n  let timer: ReturnType<typeof setTimeout>;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}`
+          }
+        }
+      },
+      '.env.local': {
+        type: 'file',
+        content: `# Environment Variables\nNEXT_PUBLIC_API_URL=http://localhost:3000/api\nNEXT_PUBLIC_APP_NAME=My Next.js App\n`
+      }
+    }
+  }
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const FILE_ICONS = {
+  tsx: '⚛️', ts: '📘', js: '💛', jsx: '⚛️',
+  json: '📋', css: '🎨', html: '🌐', md: '📝',
+  env: '🔒', local: '🔒', gitignore: '🙈',
+  png: '🖼️', jpg: '🖼️', svg: '🎭', ico: '🖼️',
+};
+function getFileIcon(name) {
+  const ext = name.split('.').pop()?.toLowerCase();
+  if (name.startsWith('.env')) return '🔒';
+  if (name === 'package.json') return '📦';
+  if (name === 'tsconfig.json') return '⚙️';
+  if (name === 'next.config.js' || name === 'next.config.ts') return '▲';
+  return FILE_ICONS[ext] || '📄';
+}
+function getLanguage(name) {
+  const ext = name.split('.').pop()?.toLowerCase();
+  const map = { tsx:'typescript', ts:'typescript', jsx:'javascript', js:'javascript', json:'json', css:'css', html:'html', md:'markdown', env:'plaintext', local:'plaintext' };
+  return map[ext] || 'plaintext';
+}
+function flattenFiles(node, path = '', result = []) {
+  if (node.type === 'file') { result.push({ path, content: node.content }); }
+  else if (node.children) { Object.entries(node.children).forEach(([k, v]) => flattenFiles(v, path ? `${path}/${k}` : k, result)); }
+  return result;
+}
+function getNodeAtPath(fs, pathArr) {
+  let cur = fs;
+  for (const seg of pathArr) { if (!cur || !cur.children) return null; cur = cur.children[seg]; }
+  return cur;
+}
+function setNodeAtPath(fs, pathArr, node) {
+  if (pathArr.length === 0) return node;
+  const [head, ...rest] = pathArr;
+  return { ...fs, children: { ...fs.children, [head]: setNodeAtPath(fs.children[head], rest, node) } };
+}
+function deleteNodeAtPath(fs, pathArr) {
+  if (pathArr.length === 1) {
+    const { [pathArr[0]]: _, ...rest } = fs.children;
+    return { ...fs, children: rest };
+  }
+  const [head, ...rest] = pathArr;
+  return { ...fs, children: { ...fs.children, [head]: deleteNodeAtPath(fs.children[head], rest) } };
+}
+function pathToArray(path) { return path.split('/').filter(Boolean); }
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+function Notifications({ notes }) {
+  return (
+    <div className="notifications">
+      {notes.map(n => (
+        <div key={n.id} className={`notification ${n.type}`}>
+          <span>{n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : 'ℹ'}</span>
+          <span>{n.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
+function ContextMenu({ x, y, items, onClose }) {
+  useEffect(() => {
+    const handler = () => onClose();
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [onClose]);
+  return (
+    <div className="ctx-menu" style={{ left: x, top: y }}>
+      {items.map((item, i) =>
+        item === 'sep' ? <div key={i} className="ctx-separator" /> :
+        <div key={i} className={`ctx-item ${item.danger ? 'danger' : ''}`} onClick={() => { item.action(); onClose(); }}>
+          {item.icon && <span>{item.icon}</span>}
+          {item.label}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── FILE TREE ITEM ───────────────────────────────────────────────────────────
+function FileTreeItem({ name, node, path, depth, selectedFile, onSelect, onToggle, onRightClick, renamingPath, onRename, onRenameCommit }) {
+  const inputRef = useRef(null);
+  useEffect(() => { if (renamingPath === path && inputRef.current) inputRef.current.focus(); }, [renamingPath, path]);
+  const isFolder = node.type === 'folder';
+  const isSelected = selectedFile === path;
+  return (
+    <>
+      <div
+        className={`file-tree-item ${isSelected ? 'selected' : ''}`}
+        style={{ paddingLeft: depth * 12 + 4 }}
+        onClick={() => isFolder ? onToggle(path) : onSelect(path)}
+        onContextMenu={e => { e.preventDefault(); onRightClick(e, path, node); }}
+      >
+        {isFolder && <span className={`file-caret ${node.open ? 'open' : ''}`}>▶</span>}
+        {!isFolder && <span className="file-caret" />}
+        <span className="file-icon">{isFolder ? (node.open ? '📂' : '📁') : getFileIcon(name)}</span>
+        {renamingPath === path ? (
+          <input
+            ref={inputRef}
+            className="file-name-input"
+            defaultValue={name}
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => {
+              if (e.key === 'Enter') onRenameCommit(path, e.target.value);
+              if (e.key === 'Escape') onRenameCommit(path, null);
+            }}
+            onBlur={e => onRenameCommit(path, e.target.value)}
+          />
+        ) : (
+          <span className="file-name">{name}</span>
+        )}
+      </div>
+      {isFolder && node.open && node.children && Object.entries(node.children).sort(([,a],[,b]) => {
+        if (a.type === b.type) return 0;
+        return a.type === 'folder' ? -1 : 1;
+      }).map(([childName, childNode]) => (
+        <FileTreeItem
+          key={childName}
+          name={childName}
+          node={childNode}
+          path={`${path}/${childName}`}
+          depth={depth + 1}
+          selectedFile={selectedFile}
+          onSelect={onSelect}
+          onToggle={onToggle}
+          onRightClick={onRightClick}
+          renamingPath={renamingPath}
+          onRename={onRename}
+          onRenameCommit={onRenameCommit}
+        />
+      ))}
+    </>
+  );
+}
+
+// ─── TERMINAL ─────────────────────────────────────────────────────────────────
+const PACKAGES_DB = {
+  'axios': { version: '1.6.2', desc: 'Promise based HTTP client' },
+  'lodash': { version: '4.17.21', desc: 'Utility library' },
+  'zod': { version: '3.22.4', desc: 'TypeScript-first schema validation' },
+  'zustand': { version: '4.4.7', desc: 'State management' },
+  'tailwindcss': { version: '3.3.5', desc: 'Utility-first CSS framework' },
+  'framer-motion': { version: '10.16.5', desc: 'Animation library' },
+  'react-query': { version: '3.39.3', desc: 'Data fetching library' },
+  '@tanstack/react-query': { version: '5.13.4', desc: 'Powerful async state management' },
+  'prisma': { version: '5.7.1', desc: 'Next-generation ORM' },
+  'next-auth': { version: '4.24.5', desc: 'Authentication for Next.js' },
+  'clsx': { version: '2.0.0', desc: 'Conditional classnames' },
+  'date-fns': { version: '2.30.0', desc: 'Modern date utility library' },
+  'swr': { version: '2.2.4', desc: 'React hooks for data fetching' },
+  'uuid': { version: '9.0.1', desc: 'UUID generation' },
+  'bcrypt': { version: '5.1.1', desc: 'Password hashing' },
+  'sharp': { version: '0.33.1', desc: 'High performance image processing' },
+  'stripe': { version: '14.7.0', desc: 'Stripe API library' },
+  'resend': { version: '2.1.0', desc: 'Email for developers' },
+  'openai': { version: '4.20.1', desc: 'OpenAI API client' },
+  'mongoose': { version: '8.0.3', desc: 'MongoDB object modeling' },
+};
+
+function Terminal({ lines, onCommand, installedPackages }) {
+  const [input, setInput] = useState('');
+  const [history, setHistory] = useState([]);
+  const [historyIdx, setHistoryIdx] = useState(-1);
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [lines]);
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && input.trim()) {
+      onCommand(input.trim());
+      setHistory(h => [input.trim(), ...h].slice(0, 50));
+      setHistoryIdx(-1);
+      setInput('');
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHistoryIdx(i => { const n = Math.min(i + 1, history.length - 1); setInput(history[n] || ''); return n; });
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHistoryIdx(i => { const n = Math.max(i - 1, -1); setInput(n === -1 ? '' : history[n]); return n; });
+    }
+  };
+
+  return (
+    <div className="panel-content" onClick={() => inputRef.current?.focus()}>
+      {lines.map((line, i) => (
+        <div key={i} className="terminal-line">
+          {line.cmd && <div className="terminal-prompt"><span className="terminal-prompt-symbol">❯</span><span>{line.cmd}</span></div>}
+          {line.output && <div className={`terminal-output ${line.type || ''}`} dangerouslySetInnerHTML={{ __html: line.output }} />}
+        </div>
+      ))}
+      <div className="terminal-input-row">
+        <span className="terminal-prompt-symbol">❯</span>
+        <input
+          ref={inputRef}
+          className="terminal-input"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKey}
+          spellCheck={false}
+          autoComplete="off"
+          placeholder="Type a command..."
+        />
+      </div>
+      <div ref={bottomRef} />
+    </div>
+  );
+}
+
+// ─── NPM PANEL ────────────────────────────────────────────────────────────────
+function NpmPanel({ packages, onInstall, onRemove }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  const handleSearch = () => {
+    if (!query.trim()) return;
+    const q = query.toLowerCase();
+    const found = Object.entries(PACKAGES_DB).filter(([k]) => k.includes(q)).map(([k, v]) => ({ name: k, ...v }));
+    setResults(found.length ? found : [{ name: query, version: 'latest', desc: 'Custom package' }]);
+  };
+
+  return (
+    <div className="npm-panel">
+      <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:600,marginBottom:4}}>
+        📦 NPM Packages
+      </div>
+      <div className="npm-search">
+        <input className="npm-input" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Search packages..." />
+        <button className="npm-btn" onClick={handleSearch}>Search</button>
+      </div>
+      {results.length > 0 && (
+        <div className="pkg-list">
+          <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',padding:'4px 0'}}>Search Results</div>
+          {results.map(pkg => (
+            <div key={pkg.name} className="pkg-item">
+              <div style={{flex:1,minWidth:0}}>
+                <div className="pkg-name">{pkg.name}</div>
+                <div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{pkg.desc}</div>
+              </div>
+              <button className="npm-btn" style={{fontSize:10,padding:'3px 8px'}} onClick={() => { onInstall(pkg.name, pkg.version); setResults([]); setQuery(''); }}>Install</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="pkg-list">
+        <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',padding:'4px 0'}}>Installed ({packages.length})</div>
+        {packages.length === 0 && <div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>No packages installed yet</div>}
+        {packages.map(pkg => (
+          <div key={pkg.name} className="pkg-item">
+            <span className="pkg-name">{pkg.name}</span>
+            <span className="pkg-version">^{pkg.version}</span>
+            <div className="pkg-actions">
+              <button className="pkg-action-btn" title="Remove" onClick={() => onRemove(pkg.name)}>🗑</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── AI COPILOT PANEL ─────────────────────────────────────────────────────────
+function AICopilotPanel({ currentFile, currentContent, onInsertCode }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const SUGGESTIONS = [
+    'Add TypeScript types to this file',
+    'Generate a React component',
+    'Add error handling',
+    'Optimize this code',
+    'Write unit tests',
+  ];
+
+  const sendMessage = async (text) => {
+    if (!text.trim()) return;
+    const userMsg = { role: 'user', text };
+    setMessages(m => [...m, userMsg]);
+    setInput('');
+    setLoading(true);
+
+    // Simulate AI response (replace with real API call)
+    await new Promise(r => setTimeout(r, 1000));
+    const responses = [
+      { text: `Here's a suggestion for <code>${currentFile || 'your file'}</code>:\n\nI can help you with TypeScript types, React components, API routes, and more. This panel is ready for AI integration — connect it to Claude API or GitHub Copilot to enable real code generation.`, code: null },
+      { text: `For Next.js projects, I recommend:\n• Using <code>app/</code> router\n• TypeScript strict mode\n• <code>zod</code> for validation\n• Server Components by default\n\nWant me to generate any of these?`, code: null },
+    ];
+    const reply = responses[messages.length % responses.length];
+    setMessages(m => [...m, { role: 'assistant', ...reply }]);
+    setLoading(false);
+  };
+
+  return (
+    <div className="ai-panel">
+      <div className="ai-header">
+        <span style={{fontSize:14}}>🤖</span>
+        <span style={{fontSize:13,fontWeight:600}}>AI Copilot</span>
+        <span className="ai-badge">BETA</span>
+      </div>
+      <div className="ai-messages" style={{flex:1,minHeight:0}}>
+        {messages.length === 0 && (
+          <div className="ai-placeholder">
+            <div style={{fontSize:24,marginBottom:8}}>✨</div>
+            <div style={{fontWeight:500,color:'var(--text2)',marginBottom:8}}>AI Copilot Ready</div>
+            <div>Ask me to generate code, explain errors, add types, or refactor your project.</div>
+            <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:6}}>
+              {SUGGESTIONS.map(s => (
+                <div key={s} style={{cursor:'pointer',background:'var(--surface3)',border:'1px solid var(--border)',borderRadius:5,padding:'5px 8px',fontSize:11,color:'var(--text3)',transition:'all 0.1s'}}
+                  onClick={() => sendMessage(s)}
+                  onMouseOver={e => e.target.style.color='var(--text)'}
+                  onMouseOut={e => e.target.style.color='var(--text3)'}
+                >
+                  {s}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`ai-msg ${m.role}`} dangerouslySetInnerHTML={{ __html: m.text?.replace(/\n/g, '<br/>') }} />
+        ))}
+        {loading && <div className="ai-msg assistant" style={{color:'var(--text3)'}}>Thinking<span style={{animation:'blink 1s infinite'}}>...</span></div>}
+      </div>
+      <div className="ai-input-row">
+        <textarea className="ai-input" rows={2} value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input); }}}
+          placeholder="Ask AI to generate, explain, or refactor code..." />
+        <button className="ai-send-btn" onClick={() => sendMessage(input)}>↑</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── SEARCH PANEL ─────────────────────────────────────────────────────────────
+function SearchPanel({ fileSystem, onOpenFile }) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  const search = (q) => {
+    if (!q.trim()) { setResults([]); return; }
+    const matches = [];
+    const files = flattenFiles({ type: 'folder', children: fileSystem }, '');
+    files.forEach(({ path, content }) => {
+      if (!content) return;
+      const lines = content.split('\n');
+      lines.forEach((line, idx) => {
+        if (line.toLowerCase().includes(q.toLowerCase())) {
+          const existing = matches.find(m => m.path === path);
+          if (existing) existing.lines.push({ num: idx + 1, text: line.trim() });
+          else matches.push({ path, lines: [{ num: idx + 1, text: line.trim() }] });
+        }
+      });
+    });
+    setResults(matches);
+  };
+
+  const highlight = (text, q) => {
+    if (!q) return text;
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx === -1) return <span className="search-result-text">{text}</span>;
+    return <span className="search-result-text">
+      {text.slice(0, idx)}
+      <span className="search-result-match">{text.slice(idx, idx + q.length)}</span>
+      {text.slice(idx + q.length)}
+    </span>;
+  };
+
+  return (
+    <div className="search-panel">
+      <input className="search-input" placeholder="🔍 Search across files..." value={query}
+        onChange={e => { setQuery(e.target.value); search(e.target.value); }} />
+      <div className="search-results">
+        {results.map(r => (
+          <div key={r.path}>
+            <div className="search-result-file">📄 {r.path.split('/').pop()} <span style={{color:'var(--text3)',fontWeight:400}}>— {r.path}</span></div>
+            {r.lines.map((l, i) => (
+              <div key={i} className="search-result-line" onClick={() => onOpenFile(r.path)}>
+                <span className="search-result-num">{l.num}</span>
+                {highlight(l.text.substring(0, 60), query)}
+              </div>
+            ))}
+          </div>
+        ))}
+        {query && results.length === 0 && <div style={{fontSize:12,color:'var(--text3)',padding:8}}>No results found</div>}
+      </div>
+    </div>
+  );
+}
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────────
+function Modal({ title, placeholder, onConfirm, onCancel }) {
+  const [value, setValue] = useState('');
+  const inputRef = useRef(null);
+  useEffect(() => inputRef.current?.focus(), []);
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-title">{title}</div>
+        <input ref={inputRef} className="modal-input" value={value} onChange={e => setValue(e.target.value)}
+          placeholder={placeholder} onKeyDown={e => { if (e.key === 'Enter') onConfirm(value); if (e.key === 'Escape') onCancel(); }} />
+        <div className="modal-actions">
+          <button className="modal-btn cancel" onClick={onCancel}>Cancel</button>
+          <button className="modal-btn primary" onClick={() => onConfirm(value)}>Create</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── OUTPUT PANEL ─────────────────────────────────────────────────────────────
+function OutputPanel({ currentFile, currentContent }) {
+  const [html, setHtml] = useState('');
+  const [running, setRunning] = useState(false);
+
+  const runCode = () => {
+    setRunning(true);
+    setTimeout(() => {
+      const content = currentContent || '';
+      const isReact = content.includes('return (') || content.includes('export default');
+      if (isReact) {
+        const htmlOut = `<!DOCTYPE html>
+<html><head>
+<style>body{font-family:system-ui,sans-serif;padding:32px;background:#f9fafb;color:#111}</style>
+</head><body>
+<div style="background:white;border:1px solid #e5e7eb;border-radius:12px;padding:24px;box-shadow:0 4px 12px rgba(0,0,0,0.06)">
+<h2 style="color:#3b82f6;margin-bottom:12px">✅ Next.js Preview</h2>
+<p style="color:#6b7280;margin-bottom:16px">File: <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${currentFile || 'page.tsx'}</code></p>
+<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb"/>
+<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:12px;font-size:14px">
+<strong>🚀 Component Detected</strong><br/>
+<span style="color:#15803d">This file contains a React/Next.js component. In production, run <code>npm run dev</code> to see it at <a href="http://localhost:3000" style="color:#3b82f6">localhost:3000</a></span>
+</div>
+<div style="margin-top:16px;font-size:12px;color:#9ca3af">
+Lines: ${content.split('\n').length} • Characters: ${content.length} • Language: TypeScript/React
+</div>
+</div>
+</body></html>`;
+        setHtml(htmlOut);
+      } else {
+        const safeContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        setHtml(`<!DOCTYPE html><html><body style="font-family:monospace;padding:16px;background:#0d1117;color:#e6edf3"><pre>${safeContent}</pre></body></html>`);
+      }
+      setRunning(false);
+    }, 800);
+  };
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',height:'100%'}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 12px',borderBottom:'1px solid var(--border)',flexShrink:0}}>
+        <button onClick={runCode} disabled={running} style={{background:'var(--accent2)',border:'none',color:'#000',fontFamily:'var(--font-ui)',fontWeight:600,fontSize:11,padding:'4px 10px',borderRadius:5,cursor:'pointer',display:'flex',alignItems:'center',gap:4}}>
+          {running ? '⟳ Running...' : '▶ Preview'}
+        </button>
+        <span style={{fontSize:11,color:'var(--text3)'}}>{currentFile || 'No file selected'}</span>
+      </div>
+      <div style={{flex:1,overflow:'hidden',background:'#fff'}}>
+        {html ? (
+          <iframe srcDoc={html} style={{width:'100%',height:'100%',border:'none'}} title="output" />
+        ) : (
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%',flexDirection:'column',gap:8,background:'var(--surface)'}}>
+            <span style={{fontSize:32}}>▶</span>
+            <span style={{color:'var(--text3)',fontSize:13}}>Click Preview to run the current file</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const [fileSystem, setFileSystem] = useState(DEFAULT_FS);
+  const [openFiles, setOpenFiles] = useState([{ path: 'my-next-app/app/page.tsx', modified: false }]);
+  const [activeFile, setActiveFile] = useState('my-next-app/app/page.tsx');
+  const [fileContents, setFileContents] = useState({});
+  const [sidebarTab, setSidebarTab] = useState('explorer'); // explorer | search | npm | ai
+  const [panelTab, setPanelTab] = useState('terminal');
+  const [terminalLines, setTerminalLines] = useState([
+    { output: '<span class="success">WebIDE v1.0.0</span> — Browser-based Next.js IDE', type: 'info' },
+    { output: 'Type <span class="info">help</span> for available commands.', type: '' },
+    { output: '' },
+  ]);
+  const [installedPackages, setInstalledPackages] = useState([
+    { name: 'next', version: '14.0.0' },
+    { name: 'react', version: '18.2.0' },
+    { name: 'typescript', version: '5.3.2' },
+  ]);
+  const [ctxMenu, setCtxMenu] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [renamingPath, setRenamingPath] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const editorRef = useRef(null);
+  const monacoRef = useRef(null);
+  const [editorMounted, setEditorMounted] = useState(false);
+  const [currentLang, setCurrentLang] = useState('typescript');
+  const [cursorInfo, setCursorInfo] = useState({ line: 1, col: 1 });
+  const [panelH, setPanelH] = useState(220);
+
+  // ── NOTIFICATIONS ──
+  const notify = useCallback((message, type = 'info') => {
+    const id = Date.now();
+    setNotifications(n => [...n, { id, message, type }]);
+    setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), 3500);
+  }, []);
+
+  // ── MONACO SETUP ──
+  useEffect(() => {
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+    require(['vs/editor/editor.main'], (monaco) => {
+      monacoRef.current = monaco;
+      monaco.editor.defineTheme('webide-dark', {
+        base: 'vs-dark',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '6e7681', fontStyle: 'italic' },
+          { token: 'keyword', foreground: 'ff7b72' },
+          { token: 'string', foreground: 'a5d6ff' },
+          { token: 'number', foreground: '79c0ff' },
+          { token: 'type', foreground: 'ffa657' },
+        ],
+        colors: {
+          'editor.background': '#0d1117',
+          'editor.foreground': '#e6edf3',
+          'editor.lineHighlightBackground': '#161b22',
+          'editorCursor.foreground': '#58a6ff',
+          'editorLineNumber.foreground': '#3d444d',
+          'editorLineNumber.activeForeground': '#6e7681',
+          'editor.selectionBackground': '#388bfd33',
+          'editorIndentGuide.background': '#21262d',
+          'editorBracketMatch.background': '#388bfd33',
+          'editorBracketMatch.border': '#58a6ff',
+        }
+      });
+      const editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+        value: '',
+        language: 'typescript',
+        theme: 'webide-dark',
+        fontSize: 13.5,
+        fontFamily: "'JetBrains Mono', monospace",
+        fontLigatures: true,
+        lineNumbers: 'on',
+        minimap: { enabled: true, maxColumn: 80 },
+        scrollBeyondLastLine: false,
+        wordWrap: 'off',
+        tabSize: 2,
+        insertSpaces: true,
+        autoIndent: 'full',
+        formatOnPaste: true,
+        formatOnType: true,
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: true,
+        renderWhitespace: 'selection',
+        bracketPairColorization: { enabled: true },
+        smoothScrolling: true,
+        cursorBlinking: 'phase',
+        renderLineHighlight: 'gutter',
+        padding: { top: 12, bottom: 12 },
+      });
+      editorRef.current = editor;
+
+      // TypeScript compiler options
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        allowNonTsExtensions: true,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        module: monaco.languages.typescript.ModuleKind.CommonJS,
+        noEmit: true,
+        esModuleInterop: true,
+        jsx: monaco.languages.typescript.JsxEmit.React,
+        reactNamespace: 'React',
+        allowJs: true,
+        typeRoots: ['node_modules/@types'],
+      });
+
+      editor.onDidChangeCursorPosition(e => {
+        setCursorInfo({ line: e.position.lineNumber, col: e.position.column });
+      });
+      editor.onDidChangeModelContent(() => {
+        const path = activeFileRef.current;
+        if (!path) return;
+        const val = editor.getValue();
+        setFileContents(prev => ({ ...prev, [path]: val }));
+        setOpenFiles(prev => prev.map(f => f.path === path ? { ...f, modified: true } : f));
+      });
+
+      setEditorMounted(true);
+    });
+  }, []);
+
+  // Ref for active file in closure
+  const activeFileRef = useRef(activeFile);
+  useEffect(() => { activeFileRef.current = activeFile; }, [activeFile]);
+
+  // ── LOAD FILE INTO EDITOR ──
+  useEffect(() => {
+    if (!editorMounted || !activeFile) return;
+    const content = getFileContent(activeFile);
+    const lang = getLanguage(activeFile.split('/').pop());
+    setCurrentLang(lang);
+    if (editorRef.current) {
+      const model = monacoRef.current.editor.createModel(content, lang, monacoRef.current.Uri.parse(`file:///${activeFile}`));
+      const existingModel = monacoRef.current.editor.getModels().find(m => m.uri.toString() === `file:///${activeFile}`);
+      if (existingModel) {
+        editorRef.current.setModel(existingModel);
+      } else {
+        editorRef.current.setModel(model);
+      }
+    }
+  }, [activeFile, editorMounted]);
+
+  const getFileContent = useCallback((path) => {
+    if (fileContents[path] !== undefined) return fileContents[path];
+    const parts = pathToArray(path);
+    const root = parts[0];
+    const node = getNodeAtPath({ children: fileSystem }, parts);
+    return node?.content || '';
+  }, [fileSystem, fileContents]);
+
+  // ── OPEN FILE ──
+  const openFile = useCallback((path) => {
+    setActiveFile(path);
+    setOpenFiles(prev => prev.find(f => f.path === path) ? prev : [...prev, { path, modified: false }]);
+  }, []);
+
+  // ── CLOSE TAB ──
+  const closeTab = useCallback((path, e) => {
+    e.stopPropagation();
+    setOpenFiles(prev => {
+      const next = prev.filter(f => f.path !== path);
+      if (activeFile === path && next.length > 0) setActiveFile(next[next.length - 1].path);
+      else if (next.length === 0) setActiveFile(null);
+      return next;
+    });
+  }, [activeFile]);
+
+  // ── SAVE FILE ──
+  const saveFile = useCallback(() => {
+    if (!activeFile) return;
+    const content = editorRef.current?.getValue() || '';
+    const parts = pathToArray(activeFile);
+    setFileSystem(fs => {
+      const rootKey = parts[0];
+      const root = fs[rootKey];
+      if (!root) return fs;
+      const newRoot = setNodeAtPath(root, parts.slice(1), { type: 'file', content });
+      return { ...fs, [rootKey]: newRoot };
+    });
+    setFileContents(prev => ({ ...prev, [activeFile]: content }));
+    setOpenFiles(prev => prev.map(f => f.path === activeFile ? { ...f, modified: false } : f));
+    notify(`Saved ${activeFile.split('/').pop()}`, 'success');
+  }, [activeFile, notify]);
+
+  // Ctrl+S
+  useEffect(() => {
+    const handler = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); } };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [saveFile]);
+
+  // ── TOGGLE FOLDER ──
+  const toggleFolder = useCallback((path) => {
+    const parts = pathToArray(path);
+    const rootKey = parts[0];
+    setFileSystem(fs => {
+      const root = fs[rootKey];
+      if (!root) return fs;
+      const node = getNodeAtPath(root, parts.slice(1));
+      if (!node) return fs;
+      const newRoot = setNodeAtPath(root, parts.slice(1), { ...node, open: !node.open });
+      return { ...fs, [rootKey]: newRoot };
+    });
+  }, []);
+
+  // ── CONTEXT MENU ──
+  const handleRightClick = useCallback((e, path, node) => {
+    e.preventDefault();
+    const isFolder = node.type === 'folder';
+    const items = [];
+    if (isFolder) {
+      items.push({ label: 'New File', icon: '📄', action: () => setModal({ type: 'newFile', parentPath: path }) });
+      items.push({ label: 'New Folder', icon: '📁', action: () => setModal({ type: 'newFolder', parentPath: path }) });
+      items.push('sep');
+    }
+    items.push({ label: 'Rename', icon: '✏️', action: () => setRenamingPath(path) });
+    items.push({ label: 'Delete', icon: '🗑️', danger: true, action: () => {
+      const parts = pathToArray(path);
+      const rootKey = parts[0];
+      setFileSystem(fs => {
+        if (parts.length === 1) { const { [rootKey]: _, ...rest } = fs; return rest; }
+        const root = fs[rootKey];
+        const newRoot = deleteNodeAtPath(root, parts.slice(1));
+        return { ...fs, [rootKey]: newRoot };
+      });
+      setOpenFiles(prev => prev.filter(f => !f.path.startsWith(path)));
+      if (activeFile?.startsWith(path)) setActiveFile(null);
+      notify(`Deleted ${path.split('/').pop()}`, 'info');
+    }});
+    setCtxMenu({ x: e.clientX, y: e.clientY, items });
+  }, [activeFile, notify]);
+
+  // ── RENAME COMMIT ──
+  const handleRenameCommit = useCallback((path, newName) => {
+    setRenamingPath(null);
+    if (!newName || newName === path.split('/').pop()) return;
+    const parts = pathToArray(path);
+    const rootKey = parts[0];
+    const oldName = parts[parts.length - 1];
+    setFileSystem(fs => {
+      if (parts.length === 1) {
+        const { [oldName]: node, ...rest } = fs;
+        return { ...rest, [newName]: node };
+      }
+      const root = fs[rootKey];
+      const parentParts = parts.slice(1, -1);
+      const parent = getNodeAtPath(root, parentParts);
+      if (!parent) return fs;
+      const { [oldName]: nodeToRename, ...siblings } = parent.children;
+      const newParent = { ...parent, children: { ...siblings, [newName]: nodeToRename } };
+      const newRoot = setNodeAtPath(root, parentParts, newParent);
+      return { ...fs, [rootKey]: newRoot };
+    });
+    notify(`Renamed to ${newName}`, 'success');
+  }, [notify]);
+
+  // ── MODAL CONFIRM ──
+  const handleModalConfirm = useCallback((value) => {
+    if (!value.trim() || !modal) { setModal(null); return; }
+    const { type, parentPath } = modal;
+    const parts = pathToArray(parentPath);
+    const rootKey = parts[0];
+    const isFile = type === 'newFile';
+    setFileSystem(fs => {
+      const root = fs[rootKey];
+      const parentNode = getNodeAtPath(root, parts.slice(1));
+      const newChild = isFile ? { type: 'file', content: '' } : { type: 'folder', open: true, children: {} };
+      const newParent = { ...parentNode, children: { ...parentNode.children, [value]: newChild } };
+      const newRoot = setNodeAtPath(root, parts.slice(1), newParent);
+      return { ...fs, [rootKey]: newRoot };
+    });
+    const newPath = `${parentPath}/${value}`;
+    if (isFile) openFile(newPath);
+    notify(`Created ${value}`, 'success');
+    setModal(null);
+  }, [modal, openFile, notify]);
+
+  // ── INSTALL PACKAGE ──
+  const installPackage = useCallback((name, version) => {
+    addTerminalLine({ cmd: `npm install ${name}` });
+    addTerminalLine({ output: `<span class="info">⟳ Fetching ${name}@${version}...</span>` });
+    setTimeout(() => {
+      addTerminalLine({ output: `<span class="success">✓ Installed ${name}@${version}</span>` });
+      addTerminalLine({ output: `<span class="success">✓ Updated package.json</span>` });
+      setInstalledPackages(prev => prev.find(p => p.name === name) ? prev : [...prev, { name, version }]);
+      // Update package.json
+      setFileSystem(fs => {
+        try {
+          const pkgPath = 'my-next-app';
+          const root = fs[pkgPath];
+          const pkgNode = root.children['package.json'];
+          const pkg = JSON.parse(pkgNode.content);
+          pkg.dependencies[name] = `^${version}`;
+          const newPkg = { ...pkgNode, content: JSON.stringify(pkg, null, 2) };
+          return { ...fs, [pkgPath]: { ...root, children: { ...root.children, 'package.json': newPkg } } };
+        } catch { return fs; }
+      });
+      notify(`Installed ${name}@${version}`, 'success');
+    }, 1500);
+  }, [notify]);
+
+  const removePackage = useCallback((name) => {
+    addTerminalLine({ cmd: `npm uninstall ${name}` });
+    setTimeout(() => {
+      addTerminalLine({ output: `<span class="success">✓ Removed ${name}</span>` });
+      setInstalledPackages(prev => prev.filter(p => p.name !== name));
+      notify(`Removed ${name}`, 'info');
+    }, 800);
+  }, [notify]);
+
+  // ── TERMINAL COMMAND ──
+  const addTerminalLine = (line) => setTerminalLines(prev => [...prev, line]);
+
+  const handleCommand = useCallback((cmd) => {
+    addTerminalLine({ cmd });
+    const parts = cmd.trim().split(' ');
+    const [c, ...args] = parts;
+
+    if (c === 'help') {
+      addTerminalLine({ output: `<span class="info">Available commands:</span>\n  npm install &lt;pkg&gt;    — Install a package\n  npm uninstall &lt;pkg&gt;  — Remove a package\n  npm run dev        — Start dev server (simulated)\n  npm run build      — Build project (simulated)\n  ls                 — List files\n  cat &lt;file&gt;         — Read a file\n  clear              — Clear terminal\n  touch &lt;file&gt;       — Create file\n  mkdir &lt;dir&gt;        — Create directory\n  pwd                — Show current directory\n  node --version     — Show Node.js version` });
+    } else if (c === 'clear') {
+      setTerminalLines([]);
+    } else if (c === 'pwd') {
+      addTerminalLine({ output: '/workspace/my-next-app' });
+    } else if (c === 'ls') {
+      const files = Object.keys(fileSystem['my-next-app']?.children || {});
+      addTerminalLine({ output: files.map(f => `<span class="info">${f}</span>`).join('  ') });
+    } else if (c === 'node' && args[0] === '--version') {
+      addTerminalLine({ output: 'v20.10.0 (simulated)' });
+    } else if (c === 'npm' && args[0] === 'install' && args[1]) {
+      const pkgName = args[1];
+      const pkg = PACKAGES_DB[pkgName];
+      installPackage(pkgName, pkg?.version || 'latest');
+    } else if (c === 'npm' && args[0] === 'uninstall' && args[1]) {
+      removePackage(args[1]);
+    } else if (c === 'npm' && args[0] === 'run' && args[1] === 'dev') {
+      addTerminalLine({ output: '<span class="info">▲ Next.js 14.0.0</span>' });
+      addTerminalLine({ output: '' });
+      setTimeout(() => addTerminalLine({ output: '<span class="success">  ✓ Ready in 1247ms</span>' }), 400);
+      setTimeout(() => addTerminalLine({ output: '  <span class="info">⬡ Local:  http://localhost:3000</span>' }), 600);
+      setTimeout(() => addTerminalLine({ output: '' }), 700);
+      notify('Dev server started at localhost:3000', 'success');
+    } else if (c === 'npm' && args[0] === 'run' && args[1] === 'build') {
+      addTerminalLine({ output: '<span class="info">▲ Next.js 14.0.0 — Building...</span>' });
+      setTimeout(() => addTerminalLine({ output: '' }), 200);
+      setTimeout(() => addTerminalLine({ output: '<span class="success">  ✓ Compiled successfully</span>' }), 600);
+      setTimeout(() => addTerminalLine({ output: '  Page                               Size\n  ────────────────────────────────────────\n  ○ /                                4.2 kB\n  ○ /_not-found                      871 B\n\n  ○ (Static) prerendered as static content' }), 800);
+    } else if (c === 'cat' && args[0]) {
+      const targetPath = `my-next-app/${args[0]}`;
+      const content = getFileContent(targetPath);
+      if (content) {
+        addTerminalLine({ output: content.replace(/</g, '&lt;').replace(/>/g, '&gt;') });
+      } else {
+        addTerminalLine({ output: `<span class="error">cat: ${args[0]}: No such file</span>`, type: 'error' });
+      }
+    } else if (c === 'touch' && args[0]) {
+      const newPath = `my-next-app/${args[0]}`;
+      const parts = newPath.split('/');
+      setFileSystem(fs => {
+        const root = fs['my-next-app'];
+        const newRoot = setNodeAtPath(root, parts.slice(1), { type: 'file', content: '' });
+        return { ...fs, 'my-next-app': newRoot };
+      });
+      addTerminalLine({ output: `<span class="success">Created ${args[0]}</span>` });
+    } else if (c === 'mkdir' && args[0]) {
+      const newPath = `my-next-app/${args[0]}`;
+      const parts = newPath.split('/');
+      setFileSystem(fs => {
+        const root = fs['my-next-app'];
+        const newRoot = setNodeAtPath(root, parts.slice(1), { type: 'folder', open: true, children: {} });
+        return { ...fs, 'my-next-app': newRoot };
+      });
+      addTerminalLine({ output: `<span class="success">Created directory ${args[0]}</span>` });
+    } else if (c === '') {
+      // empty
+    } else {
+      addTerminalLine({ output: `<span class="error">Command not found: ${c}. Type 'help' for commands.</span>`, type: 'error' });
+    }
+  }, [fileSystem, getFileContent, installPackage, removePackage, notify]);
+
+  // ── PANEL RESIZE ──
+  const resizing = useRef(false);
+  const handleResizeStart = (e) => {
+    resizing.current = true;
+    const startY = e.clientY;
+    const startH = panelH;
+    const onMove = (e) => { if (resizing.current) setPanelH(Math.max(80, Math.min(500, startH + startY - e.clientY))); };
+    const onUp = () => { resizing.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  // ── SIDEBAR CONTENT ──
+  const renderSidebar = () => {
+    if (sidebarTab === 'explorer') return (
+      <>
+        <div className="sidebar-header">
+          <span>Explorer</span>
+          <div className="sidebar-header-actions">
+            <button className="icon-btn" title="New File" onClick={() => setModal({ type:'newFile', parentPath:'my-next-app' })}>+</button>
+            <button className="icon-btn" title="New Folder" onClick={() => setModal({ type:'newFolder', parentPath:'my-next-app' })}>⊞</button>
+          </div>
+        </div>
+        <div className="sidebar-content">
+          {Object.entries(fileSystem).map(([name, node]) => (
+            <FileTreeItem key={name} name={name} node={node} path={name} depth={0}
+              selectedFile={activeFile} onSelect={openFile} onToggle={toggleFolder}
+              onRightClick={handleRightClick} renamingPath={renamingPath}
+              onRename={setRenamingPath} onRenameCommit={handleRenameCommit} />
+          ))}
+        </div>
+      </>
+    );
+    if (sidebarTab === 'search') return (
+      <>
+        <div className="sidebar-header"><span>Search</span></div>
+        <div className="sidebar-content" style={{overflow:'visible'}}>
+          <SearchPanel fileSystem={fileSystem} onOpenFile={openFile} />
+        </div>
+      </>
+    );
+    if (sidebarTab === 'npm') return (
+      <>
+        <div className="sidebar-header"><span>NPM</span></div>
+        <div className="sidebar-content">
+          <NpmPanel packages={installedPackages} onInstall={installPackage} onRemove={removePackage} />
+        </div>
+      </>
+    );
+    if (sidebarTab === 'ai') return (
+      <>
+        <div className="sidebar-header"><span>AI Copilot</span></div>
+        <div className="sidebar-content" style={{display:'flex',flexDirection:'column',height:'calc(100% - 34px)',overflow:'hidden'}}>
+          <AICopilotPanel currentFile={activeFile?.split('/').pop()} currentContent={activeFile ? getFileContent(activeFile) : ''} />
+        </div>
+      </>
+    );
+  };
+
+  const activeFileTab = openFiles.find(f => f.path === activeFile);
+  const breadcrumbs = activeFile ? activeFile.split('/') : [];
+
+  return (
+    <div className="app">
+      {/* TITLEBAR */}
+      <div className="titlebar">
+        <div className="titlebar-logo">
+          <div className="logo-icon">W</div>
+          <span>WebIDE</span>
+        </div>
+        <div className="titlebar-menu">
+          {['File','Edit','View','Run','Terminal','Help'].map(m => (
+            <div key={m} className="menu-item">{m}</div>
+          ))}
+        </div>
+        <div className="titlebar-center">
+          <div className="titlebar-breadcrumb">
+            <span>my-next-app</span>
+          </div>
+        </div>
+        <div className="titlebar-actions">
+          <button className="titlebar-btn green" onClick={() => handleCommand('npm run dev')}>▶ Run Dev</button>
+          <button className="titlebar-btn" onClick={saveFile}>💾 Save</button>
+          <button className="titlebar-btn" onClick={() => handleCommand('npm run build')}>⚡ Build</button>
+        </div>
+      </div>
+
+      {/* WORKBENCH */}
+      <div className="workbench">
+        {/* ACTIVITY BAR */}
+        <div className="activity-bar">
+          {[
+            { id:'explorer', icon:'📁', label:'Explorer' },
+            { id:'search', icon:'🔍', label:'Search' },
+            { id:'npm', icon:'📦', label:'NPM Packages' },
+            { id:'ai', icon:'🤖', label:'AI Copilot' },
+          ].map(({ id, icon, label }) => (
+            <div key={id} className={`activity-icon ${sidebarTab === id ? 'active' : ''}`} title={label}
+              onClick={() => setSidebarTab(id)}>
+              {icon}
+            </div>
+          ))}
+          <div className="activity-spacer" />
+          <div className="activity-icon" title="Settings">⚙️</div>
+        </div>
+
+        {/* SIDEBAR */}
+        <div className="sidebar" style={{ width: 'var(--sidebar-w)' }}>
+          {renderSidebar()}
+        </div>
+
+        {/* MAIN AREA */}
+        <div className="main-area">
+          {/* TABS */}
+          <div className="tabs-bar">
+            {openFiles.map(({ path, modified }) => {
+              const name = path.split('/').pop();
+              return (
+                <div key={path} className={`tab ${activeFile === path ? 'active' : ''} ${modified ? 'tab-modified' : ''}`}
+                  onClick={() => openFile(path)}>
+                  <span className="tab-icon">{getFileIcon(name)}</span>
+                  <span className="tab-name">{name}</span>
+                  <span className="tab-close" onClick={e => closeTab(path, e)}>✕</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* BREADCRUMB */}
+          {activeFile && (
+            <div className="breadcrumb">
+              {breadcrumbs.map((seg, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && <span className="bc-sep">›</span>}
+                  <span className={`bc-item ${i === breadcrumbs.length-1 ? 'last' : ''}`}>{seg}</span>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
+
+          {/* EDITOR */}
+          <div className="editor-panel-area">
+            <div className="editor-container">
+              {!activeFile && (
+                <div className="welcome">
+                  <div className="welcome-logo">⬡</div>
+                  <div className="welcome-title">WebIDE</div>
+                  <div className="welcome-subtitle">Next.js + TypeScript Browser Editor</div>
+                  <div className="welcome-actions">
+                    {[
+                      { icon:'📄', label:'New File', action: () => setModal({ type:'newFile', parentPath:'my-next-app' }) },
+                      { icon:'📦', label:'Install Package', action: () => setSidebarTab('npm') },
+                      { icon:'🤖', label:'Open AI Copilot', action: () => setSidebarTab('ai') },
+                      { icon:'▶', label:'Run Dev Server', action: () => handleCommand('npm run dev') },
+                    ].map(({ icon, label, action }) => (
+                      <div key={label} className="welcome-action" onClick={action}>
+                        <span className="welcome-action-icon">{icon}</span>
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div id="monaco-editor" style={{ display: activeFile ? 'block' : 'none', width:'100%', height:'100%' }} />
+            </div>
+
+            {/* PANEL */}
+            <div className="panel" style={{ height: panelH, '--panel-h': panelH + 'px' }}>
+              <div className="panel-resize-handle" onMouseDown={handleResizeStart} />
+              <div className="panel-tabs">
+                {[
+                  { id:'terminal', label:'Terminal', icon:'$' },
+                  { id:'output', label:'Preview', icon:'▶' },
+                  { id:'problems', label:'Problems', icon:'⚠' },
+                ].map(({ id, label, icon }) => (
+                  <div key={id} className={`panel-tab ${panelTab === id ? 'active' : ''}`} onClick={() => setPanelTab(id)}>
+                    <span>{icon}</span>{label}
+                  </div>
+                ))}
+                <div style={{flex:1}} />
+                <button className="icon-btn" style={{fontSize:12}} onClick={() => setPanelH(220)}>⊡</button>
+              </div>
+              {panelTab === 'terminal' && (
+                <Terminal lines={terminalLines} onCommand={handleCommand} installedPackages={installedPackages} />
+              )}
+              {panelTab === 'output' && (
+                <OutputPanel currentFile={activeFile?.split('/').pop()} currentContent={activeFile ? getFileContent(activeFile) : ''} />
+              )}
+              {panelTab === 'problems' && (
+                <div className="panel-content" style={{color:'var(--text3)',fontSize:12}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,color:'var(--accent2)'}}>
+                    <span>✓</span> No problems detected
+                  </div>
+                  <div style={{marginTop:8,color:'var(--text3)'}}>TypeScript diagnostics will appear here</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* STATUS BAR */}
+      <div className="status-bar">
+        <div className="status-item" onClick={() => setSidebarTab('ai')}>
+          <span>🤖</span> AI Copilot
+        </div>
+        <div className="status-item">
+          <span className="status-dot" />
+          Next.js 14
+        </div>
+        <div className="status-item">
+          ⎇ main
+        </div>
+        <div className="status-spacer" />
+        {activeFile && (
+          <>
+            <div className="status-item">{currentLang}</div>
+            <div className="status-item">Ln {cursorInfo.line}, Col {cursorInfo.col}</div>
+            <div className="status-item">UTF-8</div>
+            <div className="status-item">TypeScript {activeFile.endsWith('.tsx') ? 'JSX' : ''}</div>
+          </>
+        )}
+        <div className="status-item">Spaces: 2</div>
+      </div>
+
+      {/* OVERLAYS */}
+      {ctxMenu && <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenu.items} onClose={() => setCtxMenu(null)} />}
+      {modal && (
+        <Modal
+          title={modal.type === 'newFile' ? 'New File' : 'New Folder'}
+          placeholder={modal.type === 'newFile' ? 'filename.tsx' : 'folder-name'}
+          onConfirm={handleModalConfirm}
+          onCancel={() => setModal(null)}
+        />
+      )}
+      <Notifications notes={notifications} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
