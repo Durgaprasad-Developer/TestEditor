@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WebIDE — VS Code-like Browser Editor</title>
+<title>NextIDE — Next.js Browser Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Geist:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -13,250 +13,219 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1c2128;
-    --surface3: #21262d;
-    --border: #30363d;
-    --accent: #58a6ff;
-    --accent2: #3fb950;
-    --accent3: #f78166;
-    --accent4: #d2a8ff;
-    --text: #e6edf3;
-    --text2: #8b949e;
-    --text3: #6e7681;
-    --sidebar-w: 240px;
-    --tab-h: 35px;
-    --status-h: 24px;
-    --activity-w: 48px;
-    --titlebar-h: 38px;
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --surface3: #1c1c28;
+    --border: #2a2a3d;
+    --border2: #3a3a55;
+    --accent: #7c3aed;
+    --accent-light: #a78bfa;
+    --accent-glow: rgba(124,58,237,0.3);
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --text: #f1f0ff;
+    --text2: #9d9db8;
+    --text3: #5a5a7a;
+    --sidebar-w: 260px;
+    --tab-h: 36px;
+    --status-h: 26px;
+    --activity-w: 50px;
+    --titlebar-h: 42px;
     --font-mono: 'JetBrains Mono', monospace;
-    --font-ui: 'Geist', sans-serif;
+    --font-ui: 'Outfit', sans-serif;
   }
   html, body, #root { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font-ui); }
 
-  .titlebar {
-    height: var(--titlebar-h); background: var(--bg); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; padding: 0 12px; gap: 12px;
-    position: relative; z-index: 100; flex-shrink: 0;
-  }
-  .titlebar-logo { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; letter-spacing: -0.3px; }
-  .logo-icon { width: 20px; height: 20px; background: linear-gradient(135deg, var(--accent), var(--accent4)); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #fff; }
-  .titlebar-menu { display: flex; gap: 2px; margin-left: 8px; position: relative; }
-  .menu-item { padding: 3px 8px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 4px; transition: all 0.15s; position: relative; user-select: none; }
+  /* TITLEBAR */
+  .titlebar { height: var(--titlebar-h); background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; position: relative; z-index: 100; flex-shrink: 0; }
+  .titlebar-logo { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 14px; letter-spacing: -0.5px; }
+  .logo-icon { width: 26px; height: 26px; background: linear-gradient(135deg, var(--accent), #4f46e5); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; box-shadow: 0 0 12px var(--accent-glow); }
+  .logo-next-badge { font-size: 9px; background: var(--surface3); border: 1px solid var(--border2); padding: 2px 6px; border-radius: 4px; color: var(--text2); font-weight: 600; letter-spacing: 0.5px; }
+  .titlebar-menu { display: flex; gap: 1px; margin-left: 6px; position: relative; }
+  .menu-item { padding: 4px 9px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 5px; transition: all 0.15s; position: relative; user-select: none; font-weight: 500; }
   .menu-item:hover, .menu-item.open { background: var(--surface3); color: var(--text); }
-  .dropdown-menu { position: absolute; top: 100%; left: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-width: 200px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 9999; animation: fadeIn 0.1s ease; }
-  .dropdown-item { padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .dropdown-menu { position: absolute; top: calc(100% + 4px); left: 0; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; min-width: 210px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 9999; animation: fadeIn 0.1s ease; }
+  .dropdown-item { padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
   .dropdown-item:hover { background: var(--surface3); color: var(--text); }
   .dropdown-item .shortcut { color: var(--text3); font-family: var(--font-mono); font-size: 10px; }
   .dropdown-sep { height: 1px; background: var(--border); margin: 3px 0; }
   .titlebar-center { flex: 1; display: flex; justify-content: center; }
-  .titlebar-breadcrumb { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 6px; }
-  .titlebar-actions { display: flex; gap: 4px; }
-  .titlebar-btn { padding: 4px 10px; font-size: 11px; font-family: var(--font-ui); border: 1px solid var(--border); background: var(--surface3); color: var(--text2); border-radius: 5px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
-  .titlebar-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .titlebar-btn.green { border-color: var(--accent2); color: var(--accent2); }
-  .titlebar-btn.green:hover { background: var(--accent2); border-color: var(--accent2); color: #000; }
-  .titlebar-btn.red { border-color: var(--accent3); color: var(--accent3); }
-  .titlebar-btn.red:hover { background: var(--accent3); border-color: var(--accent3); color: #fff; }
-  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); animation: pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.8)} }
+  .titlebar-breadcrumb { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 5px; font-family: var(--font-mono); }
+  .titlebar-actions { display: flex; gap: 6px; }
+  .titlebar-btn { padding: 5px 12px; font-size: 11px; font-family: var(--font-ui); border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); border-radius: 6px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 5px; font-weight: 500; }
+  .titlebar-btn:hover { background: var(--surface3); border-color: var(--border2); color: var(--text); }
+  .titlebar-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 0 10px var(--accent-glow); }
+  .titlebar-btn.primary:hover { opacity: 0.88; }
+  .titlebar-btn.danger { border-color: var(--red); color: var(--red); }
+  .titlebar-btn.danger:hover { background: var(--red); color: #fff; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
 
+  /* LAYOUT */
   .app { display: flex; flex-direction: column; height: 100vh; }
   .workbench { display: flex; flex: 1; overflow: hidden; }
 
+  /* ACTIVITY BAR */
   .activity-bar { width: var(--activity-w); background: var(--bg); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 8px 0; gap: 2px; flex-shrink: 0; }
-  .activity-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: var(--text3); font-size: 18px; transition: all 0.15s; position: relative; }
-  .activity-icon:hover { color: var(--text); background: var(--surface3); }
-  .activity-icon.active { color: var(--text); background: var(--surface2); border: 1px solid var(--border); }
-  .activity-icon.active::before { content:''; position:absolute; left:-1px; top:50%; transform:translateY(-50%); width:2px; height:20px; background:var(--accent); border-radius:0 2px 2px 0; }
+  .activity-icon { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: var(--text3); font-size: 17px; transition: all 0.15s; position: relative; }
+  .activity-icon:hover { color: var(--text2); background: var(--surface2); }
+  .activity-icon.active { color: var(--accent-light); background: var(--surface2); border: 1px solid var(--border); }
+  .activity-icon.active::before { content:''; position:absolute; left:-1px; top:50%; transform:translateY(-50%); width:2px; height:18px; background:var(--accent); border-radius:0 2px 2px 0; }
   .activity-spacer { flex: 1; }
 
+  /* SIDEBAR */
   .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
-  .sidebar-header { padding: 8px 12px 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
-  .sidebar-header-actions { display: flex; gap: 4px; }
-  .icon-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 14px; line-height: 1; transition: all 0.1s; }
+  .sidebar-header { padding: 9px 12px 7px; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .sidebar-header-actions { display: flex; gap: 3px; }
+  .icon-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 2px 5px; border-radius: 4px; font-size: 13px; line-height: 1; transition: all 0.1s; }
   .icon-btn:hover { color: var(--text); background: var(--surface3); }
   .sidebar-content { flex: 1; overflow-y: auto; padding: 4px 0; }
   .sidebar-content::-webkit-scrollbar { width: 4px; }
   .sidebar-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .file-tree-item { display: flex; align-items: center; padding: 2px 4px 2px 0; cursor: pointer; font-size: 12.5px; color: var(--text2); border-radius: 4px; transition: background 0.1s; user-select: none; position: relative; }
+  /* FILE TREE */
+  .file-tree-item { display: flex; align-items: center; padding: 2px 4px 2px 0; cursor: pointer; font-size: 12.5px; color: var(--text2); border-radius: 4px; transition: background 0.1s; user-select: none; }
   .file-tree-item:hover { background: var(--surface3); color: var(--text); }
-  .file-tree-item.selected { background: rgba(88,166,255,0.1); color: var(--text); }
-  .file-caret { width: 16px; text-align: center; font-size: 10px; flex-shrink: 0; transition: transform 0.15s; color: var(--text3); }
+  .file-tree-item.selected { background: rgba(124,58,237,0.12); color: var(--text); }
+  .file-caret { width: 16px; text-align: center; font-size: 9px; flex-shrink: 0; transition: transform 0.15s; color: var(--text3); }
   .file-caret.open { transform: rotate(90deg); }
-  .file-icon { margin-right: 5px; font-size: 13px; }
-  .file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .file-name-input { background: var(--surface3); border: 1px solid var(--accent); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 0 4px; border-radius: 3px; outline: none; width: 140px; }
+  .file-icon { margin-right: 5px; font-size: 12px; }
+  .file-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
+  .file-name-input { background: var(--surface3); border: 1px solid var(--accent); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 0 4px; border-radius: 3px; outline: none; width: 150px; }
+  .route-badge { font-size: 9px; background: rgba(124,58,237,0.2); color: var(--accent-light); border-radius: 3px; padding: 1px 4px; margin-left: 4px; font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0; }
 
+  /* TABS */
   .tabs-bar { height: var(--tab-h); background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; flex-shrink: 0; }
-  .tabs-bar::-webkit-scrollbar { height: 3px; }
-  .tabs-bar::-webkit-scrollbar-thumb { background: var(--border); }
-  .tab { display: flex; align-items: center; gap: 6px; padding: 0 12px; min-width: 100px; max-width: 180px; border-right: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text3); white-space: nowrap; position: relative; flex-shrink: 0; transition: background 0.1s; background: var(--surface); }
+  .tabs-bar::-webkit-scrollbar { height: 2px; }
+  .tabs-bar::-webkit-scrollbar-thumb { background: var(--border2); }
+  .tab { display: flex; align-items: center; gap: 6px; padding: 0 13px; min-width: 110px; max-width: 190px; border-right: 1px solid var(--border); cursor: pointer; font-size: 12px; color: var(--text3); white-space: nowrap; flex-shrink: 0; transition: background 0.1s; background: var(--surface); font-family: var(--font-mono); }
   .tab:hover { background: var(--surface2); color: var(--text2); }
   .tab.active { background: var(--bg); color: var(--text); border-bottom: 2px solid var(--accent); }
-  .tab-icon { font-size: 12px; }
   .tab-name { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-  .tab-close { opacity: 0; font-size: 14px; padding: 0 2px; border-radius: 3px; transition: all 0.1s; }
+  .tab-close { opacity: 0; font-size: 13px; padding: 0 2px; border-radius: 3px; transition: all 0.1s; line-height: 1; }
   .tab:hover .tab-close, .tab.active .tab-close { opacity: 1; }
-  .tab-close:hover { background: var(--surface3); color: var(--accent3); }
-  .tab-modified::after { content: '●'; color: var(--accent4); margin-left: 4px; font-size: 8px; }
-
-  .editor-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-  .editor-container { flex: 1; overflow: hidden; position: relative; }
-  #monaco-editor { width: 100%; height: 100%; }
+  .tab-close:hover { background: var(--surface3); color: var(--red); }
+  .tab-modified::after { content: '●'; color: var(--accent-light); margin-left: 4px; font-size: 8px; }
 
   /* SPLIT VIEW */
+  .editor-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
   .split-view { display: flex; flex: 1; overflow: hidden; }
   .split-editor { flex: 1; overflow: hidden; position: relative; min-width: 0; }
-  .split-divider { width: 4px; background: var(--border); cursor: col-resize; flex-shrink: 0; transition: background 0.15s; }
+  .split-divider { width: 3px; background: var(--border); cursor: col-resize; flex-shrink: 0; transition: background 0.15s; }
   .split-divider:hover { background: var(--accent); }
+
+  /* PREVIEW PANE */
   .live-preview-pane { flex: 1; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--border); min-width: 0; }
-  .preview-toolbar { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); flex-shrink: 0; }
-  .preview-url-bar { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text2); font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; outline: none; }
-  .preview-url-bar:focus { border-color: var(--accent); color: var(--text); }
-  .preview-btn { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 11px; padding: 3px 7px; border-radius: 4px; cursor: pointer; transition: all 0.1s; }
+  .preview-toolbar { padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 6px; background: var(--surface2); flex-shrink: 0; }
+  .preview-url-bar { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text3); font-family: var(--font-mono); font-size: 11px; padding: 4px 10px; border-radius: 5px; outline: none; }
+  .preview-btn { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 11px; padding: 3px 7px; border-radius: 4px; cursor: pointer; transition: all 0.1s; font-family: var(--font-ui); }
   .preview-btn:hover { background: var(--surface3); color: var(--text); }
-  .preview-frame-wrap { flex: 1; overflow: hidden; background: #fff; position: relative; }
   .preview-frame { width: 100%; height: 100%; border: none; }
-  .preview-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--surface); color: var(--text3); font-size: 13px; gap: 8px; }
-  .preview-spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
 
-  .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; background: var(--bg); }
-  .welcome-logo { font-size: 48px; }
-  .welcome-title { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
-  .welcome-subtitle { font-size: 14px; color: var(--text3); margin-top: -24px; }
-  .welcome-actions { display: flex; flex-direction: column; gap: 8px; }
-  .welcome-action { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.15s; width: 280px; }
-  .welcome-action:hover { background: var(--surface3); color: var(--text); border-color: var(--accent); }
-  .welcome-action-icon { font-size: 18px; width: 24px; text-align: center; }
+  /* NEXT.JS ROUTE MAP */
+  .route-map { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .route-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface3); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .route-item:hover { border-color: var(--accent); background: rgba(124,58,237,0.06); }
+  .route-path { font-family: var(--font-mono); color: var(--accent-light); flex: 1; }
+  .route-type { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+  .route-type.page { background: rgba(16,185,129,0.15); color: var(--green); }
+  .route-type.layout { background: rgba(124,58,237,0.15); color: var(--accent-light); }
+  .route-type.api { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .route-type.loading { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .route-type.error { background: rgba(239,68,68,0.15); color: var(--red); }
+  .route-file { color: var(--text3); font-size: 11px; font-family: var(--font-mono); }
 
+  /* PANEL */
   .panel { background: var(--surface); border-top: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
   .panel-tabs { display: flex; align-items: center; border-bottom: 1px solid var(--border); background: var(--surface2); padding: 0 8px; flex-shrink: 0; }
-  .panel-tab { padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all 0.1s; display: flex; align-items: center; gap: 5px; }
+  .panel-tab { padding: 6px 14px; font-size: 12px; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; transition: all 0.1s; display: flex; align-items: center; gap: 5px; font-weight: 500; }
   .panel-tab:hover { color: var(--text2); }
   .panel-tab.active { color: var(--text); border-bottom-color: var(--accent); }
   .panel-resize-handle { width: 100%; height: 4px; cursor: row-resize; background: transparent; }
-  .panel-resize-handle:hover { background: rgba(88,166,255,0.3); }
+  .panel-resize-handle:hover { background: rgba(124,58,237,0.3); }
   .panel-content { flex: 1; overflow-y: auto; padding: 8px 12px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
   .panel-content::-webkit-scrollbar { width: 4px; }
   .panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .terminal-line { display: flex; flex-direction: column; margin-bottom: 2px; }
-  .terminal-prompt { color: var(--accent2); display: flex; gap: 6px; }
-  .terminal-prompt-symbol { color: var(--accent4); }
+  /* TERMINAL */
+  .terminal-line { margin-bottom: 2px; }
+  .terminal-prompt { color: var(--green); display: flex; gap: 6px; }
+  .terminal-prompt-symbol { color: var(--accent-light); }
   .terminal-output { color: var(--text2); white-space: pre-wrap; word-break: break-all; }
-  .terminal-output.error { color: var(--accent3); }
-  .terminal-output.success { color: var(--accent2); }
-  .terminal-output.info { color: var(--accent); }
+  .terminal-output.error { color: var(--red); }
+  .terminal-output.success { color: var(--green); }
+  .terminal-output.info { color: var(--blue); }
+  .terminal-output.warn { color: var(--yellow); }
   .terminal-input-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-  .terminal-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-mono); font-size: 12.5px; caret-color: var(--accent2); }
+  .terminal-input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-family: var(--font-mono); font-size: 12.5px; caret-color: var(--accent-light); }
 
-  .npm-panel { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+  /* NPM PANEL */
+  .npm-panel { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
   .npm-search { display: flex; gap: 6px; }
-  .npm-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 5px 8px; border-radius: 5px; outline: none; }
+  .npm-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 6px 9px; border-radius: 5px; outline: none; }
   .npm-input:focus { border-color: var(--accent); }
-  .npm-btn { background: var(--accent); border: none; color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 5px; cursor: pointer; transition: all 0.15s; }
+  .npm-btn { background: var(--accent); border: none; color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 600; padding: 6px 11px; border-radius: 5px; cursor: pointer; }
   .npm-btn:hover { opacity: 0.85; }
-  .npm-btn.remove { background: var(--accent3); }
-  .pkg-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; }
-  .pkg-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface3); border-radius: 5px; font-size: 12px; border: 1px solid var(--border); }
-  .pkg-name { font-family: var(--font-mono); color: var(--accent); }
+  .npm-btn.remove { background: var(--red); }
+  .pkg-list { display: flex; flex-direction: column; gap: 4px; }
+  .pkg-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; background: var(--surface3); border-radius: 5px; font-size: 12px; border: 1px solid var(--border); }
+  .pkg-name { font-family: var(--font-mono); color: var(--accent-light); }
   .pkg-version { color: var(--text3); font-size: 11px; }
-  .pkg-actions { display: flex; gap: 4px; }
-  .pkg-action-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 2px; border-radius: 3px; }
-  .pkg-action-btn:hover { color: var(--accent3); background: var(--surface2); }
+  .pkg-action-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 13px; padding: 2px 4px; border-radius: 3px; }
+  .pkg-action-btn:hover { color: var(--red); background: var(--surface2); }
 
-  .status-bar { height: var(--status-h); background: var(--accent); display: flex; align-items: center; padding: 0 10px; gap: 16px; flex-shrink: 0; font-size: 11px; }
-  .status-item { display: flex; align-items: center; gap: 4px; color: rgba(255,255,255,0.85); cursor: pointer; padding: 0 4px; border-radius: 3px; }
+  /* STATUS BAR */
+  .status-bar { height: var(--status-h); background: var(--accent); display: flex; align-items: center; padding: 0 10px; gap: 14px; flex-shrink: 0; font-size: 11.5px; }
+  .status-item { display: flex; align-items: center; gap: 4px; color: rgba(255,255,255,0.8); cursor: pointer; padding: 0 5px; border-radius: 3px; font-weight: 500; }
   .status-item:hover { background: rgba(255,255,255,0.15); color: #fff; }
   .status-spacer { flex: 1; }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); }
-  .status-dot.error { background: var(--accent3); }
-  .status-dot.live { background: #fff; animation: pulse 1.5s infinite; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; opacity: 0.6; }
+  .status-dot.live { opacity: 1; animation: pulse 1.5s infinite; }
 
-  .ctx-menu { position: fixed; z-index: 9999; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px; min-width: 160px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: fadeIn 0.1s ease; }
+  /* CONTEXT MENU */
+  .ctx-menu { position: fixed; z-index: 9999; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 4px; min-width: 170px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: fadeIn 0.1s ease; }
   .ctx-item { padding: 6px 12px; font-size: 12px; color: var(--text2); cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; transition: all 0.1s; justify-content: space-between; }
   .ctx-item:hover { background: var(--surface3); color: var(--text); }
-  .ctx-item.danger:hover { background: rgba(247,129,102,0.15); color: var(--accent3); }
+  .ctx-item.danger:hover { background: rgba(239,68,68,0.12); color: var(--red); }
   .ctx-separator { height: 1px; background: var(--border); margin: 3px 0; }
-  .ctx-shortcut { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
 
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-  .modal { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-width: 360px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); animation: slideUp 0.2s ease; }
-  .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
-  .modal-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 8px 12px; border-radius: 6px; outline: none; margin-bottom: 16px; }
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+  .modal { background: var(--surface2); border: 1px solid var(--border2); border-radius: 12px; padding: 24px; min-width: 380px; box-shadow: 0 24px 80px rgba(0,0,0,0.6); animation: slideUp 0.2s ease; }
+  .modal-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .modal-desc { font-size: 12px; color: var(--text3); margin-bottom: 14px; }
+  .modal-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding: 9px 12px; border-radius: 7px; outline: none; margin-bottom: 16px; }
   .modal-input:focus { border-color: var(--accent); }
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .modal-btn { padding: 7px 16px; font-size: 13px; font-family: var(--font-ui); border-radius: 6px; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
-  .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .modal-btn { padding: 7px 16px; font-size: 13px; font-family: var(--font-ui); border-radius: 6px; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; font-weight: 500; }
+  .modal-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .modal-btn.primary:hover { opacity: 0.85; }
   .modal-btn.cancel { background: var(--surface3); color: var(--text2); }
-  .modal-btn.cancel:hover { color: var(--text); }
 
-  .notifications { position: fixed; bottom: 32px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-  .notification { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; min-width: 240px; max-width: 320px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.2s ease; }
-  .notification.success { border-left: 3px solid var(--accent2); }
-  .notification.error { border-left: 3px solid var(--accent3); }
-  .notification.info { border-left: 3px solid var(--accent); }
+  /* NOTIFICATIONS */
+  .notifications { position: fixed; bottom: 36px; right: 16px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .notification { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; min-width: 240px; max-width: 320px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); animation: slideIn 0.2s ease; font-weight: 500; }
+  .notification.success { border-left: 3px solid var(--green); }
+  .notification.error { border-left: 3px solid var(--red); }
+  .notification.info { border-left: 3px solid var(--blue); }
+  .notification.warn { border-left: 3px solid var(--yellow); }
 
-  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  /* NEXT SCAFFOLD PANEL */
+  .scaffold-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .scaffold-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 700; padding: 4px 0; border-bottom: 1px solid var(--border); margin-top: 4px; }
+  .scaffold-btn { display: flex; align-items: center; gap: 8px; padding: 9px 10px; background: var(--surface3); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text2); transition: all 0.15s; width: 100%; text-align: left; }
+  .scaffold-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(124,58,237,0.06); }
+  .scaffold-btn-icon { font-size: 15px; }
+  .scaffold-btn-info { flex: 1; }
+  .scaffold-btn-label { font-weight: 600; color: var(--text); font-size: 12px; }
+  .scaffold-btn-desc { font-size: 10px; color: var(--text3); margin-top: 1px; }
 
-  .search-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-  .search-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 6px 10px; border-radius: 5px; outline: none; }
-  .search-input:focus { border-color: var(--accent); }
-  .search-results { display: flex; flex-direction: column; gap: 2px; max-height: 400px; overflow-y: auto; }
-  .search-result-file { font-size: 11px; color: var(--text3); padding: 4px 4px 2px; font-weight: 600; }
-  .search-result-line { font-size: 11.5px; font-family: var(--font-mono); padding: 3px 8px; cursor: pointer; border-radius: 3px; display: flex; gap: 8px; align-items: center; }
-  .search-result-line:hover { background: var(--surface3); }
-  .search-result-num { color: var(--text3); width: 28px; text-align: right; flex-shrink: 0; }
-  .search-result-text { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .search-result-match { color: var(--accent); background: rgba(88,166,255,0.15); border-radius: 2px; padding: 0 2px; }
-
-  .ai-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; height: 100%; }
-  .ai-header { display: flex; align-items: center; gap: 8px; }
-  .ai-badge { background: linear-gradient(135deg, var(--accent), var(--accent4)); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
-  .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-  .ai-msg { padding: 8px 10px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
-  .ai-msg.user { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.2); color: var(--text2); align-self: flex-end; max-width: 85%; }
-  .ai-msg.assistant { background: var(--surface3); border: 1px solid var(--border); color: var(--text2); max-width: 95%; }
-  .ai-msg.assistant code { font-family: var(--font-mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; color: var(--accent4); font-size: 11px; }
-  .ai-input-row { display: flex; gap: 6px; }
-  .ai-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-ui); font-size: 12px; padding: 7px 10px; border-radius: 6px; outline: none; resize: none; }
-  .ai-input:focus { border-color: var(--accent); }
-  .ai-send-btn { background: var(--accent); border: none; color: #fff; font-family: var(--font-ui); font-size: 14px; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
-  .ai-send-btn:hover { opacity: 0.85; }
-  .ai-placeholder { color: var(--text3); font-size: 12px; text-align: center; padding: 20px 0; line-height: 1.8; }
-
-  .breadcrumb { height: 22px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 12px; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-shrink: 0; }
-  .bc-sep { color: var(--border); }
-  .bc-item { cursor: pointer; }
-  .bc-item:hover { color: var(--text2); }
-  .bc-item.last { color: var(--text2); }
-
-  .main-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-  .editor-panel-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
-
-  /* Find widget */
-  .find-widget { position: absolute; top: 8px; right: 20px; z-index: 100; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: fadeIn 0.15s ease; }
-  .find-input { background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 4px 8px; border-radius: 4px; outline: none; width: 200px; }
-  .find-input:focus { border-color: var(--accent); }
-  .find-count { font-size: 11px; color: var(--text3); white-space: nowrap; }
-  .find-btn { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 12px; padding: 3px 6px; border-radius: 4px; cursor: pointer; }
-  .find-btn:hover { background: var(--surface3); color: var(--text); }
-
-  /* Diff viewer */
-  .diff-label { font-size: 10px; color: var(--text3); padding: 4px 8px; border-bottom: 1px solid var(--border); display: flex; gap: 16px; }
-  .diff-add { color: var(--accent2); }
-  .diff-del { color: var(--accent3); }
-
-  /* Settings panel */
-  .settings-panel { padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; height: 100%; }
-  .settings-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  /* SETTINGS */
+  .settings-panel { padding: 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .settings-section { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); font-weight: 700; padding: 4px 0; border-bottom: 1px solid var(--border); }
   .settings-item { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text2); }
   .settings-toggle { width: 32px; height: 18px; background: var(--border); border-radius: 9px; cursor: pointer; position: relative; transition: background 0.15s; }
   .settings-toggle.on { background: var(--accent); }
@@ -265,16 +234,62 @@
   .settings-select { background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-size: 11px; padding: 3px 6px; border-radius: 4px; outline: none; }
   .settings-slider { accent-color: var(--accent); width: 80px; }
 
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  /* MAIN AREA */
+  .main-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .editor-panel-area { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .breadcrumb { height: 22px; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 12px; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-shrink: 0; font-family: var(--font-mono); }
+  .bc-sep { color: var(--border2); }
+  .bc-item.last { color: var(--text2); }
+
+  /* WELCOME */
+  .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; background: var(--bg); }
+  .welcome-hero { text-align: center; }
+  .welcome-title { font-size: 32px; font-weight: 800; letter-spacing: -1.5px; background: linear-gradient(135deg, #fff 30%, var(--accent-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .welcome-subtitle { font-size: 13px; color: var(--text3); margin-top: 6px; }
+  .welcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 380px; }
+  .welcome-action { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 12.5px; color: var(--text2); transition: all 0.15s; }
+  .welcome-action:hover { background: var(--surface3); color: var(--text); border-color: var(--accent); }
+  .welcome-action-icon { font-size: 18px; }
+  .welcome-action-text { font-weight: 500; }
+
+  /* FIND WIDGET */
+  .find-widget { position: absolute; top: 8px; right: 20px; z-index: 100; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.4); animation: fadeIn 0.15s ease; }
+  .find-input { background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 4px 8px; border-radius: 4px; outline: none; width: 210px; }
+  .find-input:focus { border-color: var(--accent); }
+  .find-btn { background: none; border: 1px solid var(--border); color: var(--text3); font-size: 12px; padding: 3px 6px; border-radius: 4px; cursor: pointer; }
+  .find-btn:hover { background: var(--surface3); color: var(--text); }
+
+  /* AI PANEL */
+  .ai-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; height: 100%; overflow: hidden; }
+  .ai-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .ai-msg { padding: 9px 11px; border-radius: 8px; font-size: 12px; line-height: 1.6; }
+  .ai-msg.user { background: rgba(124,58,237,0.1); border: 1px solid rgba(124,58,237,0.2); color: var(--text2); align-self: flex-end; max-width: 88%; }
+  .ai-msg.assistant { background: var(--surface3); border: 1px solid var(--border); color: var(--text2); max-width: 96%; }
+  .ai-msg.assistant code { font-family: var(--font-mono); background: var(--surface); padding: 1px 4px; border-radius: 3px; color: var(--accent-light); font-size: 11px; }
+  .ai-input-row { display: flex; gap: 6px; }
+  .ai-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-ui); font-size: 12px; padding: 7px 10px; border-radius: 6px; outline: none; resize: none; }
+  .ai-input:focus { border-color: var(--accent); }
+  .ai-send-btn { background: var(--accent); border: none; color: #fff; font-size: 15px; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
+  .ai-send-btn:hover { opacity: 0.85; }
+
+  /* SEARCH PANEL */
+  .search-panel { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .search-input { width: 100%; background: var(--surface3); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 12px; padding: 7px 10px; border-radius: 5px; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-results { display: flex; flex-direction: column; gap: 2px; max-height: 400px; overflow-y: auto; }
+  .search-result-file { font-size: 11px; color: var(--text3); padding: 4px 4px 2px; font-weight: 600; }
+  .search-result-line { font-size: 11.5px; font-family: var(--font-mono); padding: 3px 8px; cursor: pointer; border-radius: 3px; display: flex; gap: 8px; align-items: center; }
+  .search-result-line:hover { background: var(--surface3); }
+  .search-result-num { color: var(--text3); width: 28px; text-align: right; flex-shrink: 0; }
+  .search-result-text { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-result-match { color: var(--accent-light); background: rgba(124,58,237,0.15); border-radius: 2px; padding: 0 2px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-  /* Problems panel */
-  .problem-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 8px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-  .problem-item:hover { background: var(--surface3); }
-  .problem-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
-  .problem-msg { color: var(--text2); flex: 1; }
-  .problem-loc { color: var(--text3); font-family: var(--font-mono); font-size: 10px; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -283,203 +298,568 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-// ─── FILE SYSTEM ─────────────────────────────────────────────────────────────
+// ─── NEXT.JS DEFAULT FILE SYSTEM ──────────────────────────────────────────────
 const DEFAULT_FS = {
-  'my-app': {
+  'my-next-app': {
     type: 'folder', open: true,
     children: {
-      'index.html': {
-        type: 'file',
-        content: `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My App</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1>🚀 My Web App</h1>
-      <p>Edit files in WebIDE and see live changes!</p>
-    </header>
-    <main>
-      <div class="card">
-        <h2>Welcome</h2>
-        <p>This is your live preview. Changes in the editor reflect here instantly.</p>
-        <button onclick="greet()">Click me!</button>
-        <p id="msg"></p>
-      </div>
-    </main>
-  </div>
-  <script src="app.js"><\/script>
-</body>
-</html>`
-      },
-      'style.css': {
-        type: 'file',
-        content: `* { box-sizing: border-box; margin: 0; padding: 0; }
+      'app': {
+        type: 'folder', open: true,
+        children: {
+          'layout.tsx': {
+            type: 'file',
+            content: `import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+
+const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'My Next.js App',
+  description: 'Built with Next.js App Router',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className={inter.className}>
+        <nav className="navbar">
+          <div className="nav-brand">MyApp</div>
+          <div className="nav-links">
+            <a href="/">Home</a>
+            <a href="/about">About</a>
+            <a href="/blog">Blog</a>
+          </div>
+        </nav>
+        <main>{children}</main>
+      </body>
+    </html>
+  )
+}
+`
+          },
+          'page.tsx': {
+            type: 'file',
+            content: `export default function HomePage() {
+  return (
+    <div className="container">
+      <section className="hero">
+        <h1>Welcome to <span className="gradient-text">Next.js</span></h1>
+        <p>
+          A modern React framework with server-side rendering,
+          static generation, and more.
+        </p>
+        <div className="hero-actions">
+          <a href="/about" className="btn btn-primary">Get Started →</a>
+          <a href="/blog" className="btn btn-secondary">Read the Blog</a>
+        </div>
+      </section>
+
+      <section className="features">
+        <div className="feature-card">
+          <div className="feature-icon">⚡</div>
+          <h3>Fast by Default</h3>
+          <p>Automatic static optimization for lightning fast pages</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">🔧</div>
+          <h3>Zero Config</h3>
+          <p>Automatic compilation and bundling, optimized for production</p>
+        </div>
+        <div className="feature-card">
+          <div className="feature-icon">🌐</div>
+          <h3>Hybrid Rendering</h3>
+          <p>Render pages server-side or statically on a per-page basis</p>
+        </div>
+      </section>
+    </div>
+  )
+}
+`
+          },
+          'globals.css': {
+            type: 'file',
+            content: `* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0a;
+  color: #ededed;
   min-height: 100vh;
+}
+
+.navbar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid #222;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.container {
-  max-width: 600px;
-  width: 100%;
+.nav-brand {
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-header {
+.nav-links { display: flex; gap: 24px; }
+.nav-links a { color: #999; text-decoration: none; font-size: 14px; transition: color 0.2s; }
+.nav-links a:hover { color: #fff; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+
+.hero {
+  padding: 80px 0 60px;
   text-align: center;
-  color: white;
-  margin-bottom: 24px;
 }
 
-header h1 {
-  font-size: 2rem;
-  margin-bottom: 8px;
-}
-
-header p {
-  opacity: 0.85;
-  font-size: 1rem;
-}
-
-.card {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-
-.card h2 {
-  font-size: 1.4rem;
-  color: #1a1a2e;
-  margin-bottom: 12px;
-}
-
-.card p {
-  color: #666;
-  line-height: 1.6;
+.hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  line-height: 1.1;
   margin-bottom: 20px;
 }
 
-button {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
+.gradient-text {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: #888;
+  max-width: 500px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+
+.hero-actions { display: flex; gap: 12px; justify-content: center; }
+
+.btn {
   padding: 12px 28px;
   border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102,126,234,0.4);
-}
-
-#msg {
-  margin-top: 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #667eea;
-}`
-      },
-      'app.js': {
-        type: 'file',
-        content: `// App JavaScript
-const messages = [
-  "Hello, World! 👋",
-  "WebIDE is awesome! 🚀", 
-  "Live preview works! ⚡",
-  "Happy coding! 💻",
-  "You're building something great! 🌟"
-];
-
-let idx = 0;
-
-function greet() {
-  const msg = document.getElementById('msg');
-  msg.textContent = messages[idx % messages.length];
-  msg.style.animation = 'none';
-  setTimeout(() => {
-    msg.style.animation = 'fadeIn 0.3s ease';
-  }, 10);
-  idx++;
+  text-decoration: none;
+  transition: all 0.2s;
 }
 
-// Add fade animation
-const style = document.createElement('style');
-style.textContent = '@keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }';
-document.head.appendChild(style);
+.btn-primary {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+}
 
-console.log('App loaded! Open the console in Preview to see logs.');`
+.btn-primary:hover { background: #6d28d9; transform: translateY(-1px); }
+
+.btn-secondary {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #333;
+}
+
+.btn-secondary:hover { border-color: #555; color: #fff; }
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding-bottom: 60px;
+}
+
+.feature-card {
+  padding: 28px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 12px;
+  transition: border-color 0.2s;
+}
+
+.feature-card:hover { border-color: #7c3aed; }
+
+.feature-icon { font-size: 28px; margin-bottom: 12px; }
+.feature-card h3 { font-size: 16px; margin-bottom: 8px; }
+.feature-card p { font-size: 13px; color: #888; line-height: 1.6; }
+`
+          },
+          'about': {
+            type: 'folder', open: false,
+            children: {
+              'page.tsx': {
+                type: 'file',
+                content: `export default function AboutPage() {
+  return (
+    <div className="container">
+      <div style={{ padding: '80px 0', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '3rem', fontWeight: 900, letterSpacing: '-2px', marginBottom: '20px' }}>
+          About Us
+        </h1>
+        <p style={{ color: '#888', maxWidth: '500px', margin: '0 auto', lineHeight: 1.7 }}>
+          We build amazing things with Next.js. This is the About page
+          using the App Router with file-based routing.
+        </p>
+      </div>
+    </div>
+  )
+}
+`
+              }
+            }
+          },
+          'blog': {
+            type: 'folder', open: false,
+            children: {
+              'page.tsx': {
+                type: 'file',
+                content: `const posts = [
+  { id: 1, title: 'Getting Started with Next.js App Router', date: '2024-01-15', tags: ['Next.js', 'React'] },
+  { id: 2, title: 'Server Components vs Client Components', date: '2024-01-22', tags: ['React', 'Performance'] },
+  { id: 3, title: 'Building APIs with Route Handlers', date: '2024-01-29', tags: ['API', 'Next.js'] },
+]
+
+export default function BlogPage() {
+  return (
+    <div className="container">
+      <div style={{ padding: '60px 0' }}>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: '8px' }}>Blog</h1>
+        <p style={{ color: '#888', marginBottom: '40px' }}>Thoughts, tutorials, and insights</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {posts.map(post => (
+            <a key={post.id} href={\`/blog/\${post.id}\`}
+              style={{ padding: '24px', background: '#111', border: '1px solid #222', borderRadius: '12px', textDecoration: 'none', display: 'block', transition: 'border-color 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.borderColor = '#7c3aed'}
+              onMouseOut={e => e.currentTarget.style.borderColor = '#222'}>
+              <h2 style={{ fontSize: '1.1rem', color: '#fff', marginBottom: '8px' }}>{post.title}</h2>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span style={{ color: '#666', fontSize: '12px' }}>{post.date}</span>
+                {post.tags.map(tag => (
+                  <span key={tag} style={{ background: 'rgba(124,58,237,0.15)', color: '#a78bfa', padding: '2px 8px', borderRadius: '4px', fontSize: '11px' }}>{tag}</span>
+                ))}
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+`
+              },
+              '[slug]': {
+                type: 'folder', open: false,
+                children: {
+                  'page.tsx': {
+                    type: 'file',
+                    content: `interface Params { params: { slug: string } }
+
+export default function BlogPostPage({ params }: Params) {
+  return (
+    <div className="container">
+      <div style={{ padding: '60px 0', maxWidth: '700px', margin: '0 auto' }}>
+        <a href="/blog" style={{ color: '#a78bfa', textDecoration: 'none', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '32px' }}>
+          ← Back to Blog
+        </a>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: '12px', lineHeight: 1.2 }}>
+          Blog Post #{params.slug}
+        </h1>
+        <p style={{ color: '#888', marginBottom: '40px', fontSize: '13px' }}>January 15, 2024 · 5 min read</p>
+        <p style={{ color: '#ccc', lineHeight: 1.8 }}>
+          This is a dynamic route page. The slug is: <code style={{ background: '#1a1a1a', padding: '2px 6px', borderRadius: '4px', color: '#a78bfa' }}>{params.slug}</code>
+        </p>
+      </div>
+    </div>
+  )
+}
+`
+                  }
+                }
+              }
+            }
+          },
+          'api': {
+            type: 'folder', open: false,
+            children: {
+              'hello': {
+                type: 'folder', open: false,
+                children: {
+                  'route.ts': {
+                    type: 'file',
+                    content: `import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Hello from Next.js API!',
+    timestamp: new Date().toISOString(),
+    version: '14.0.0'
+  })
+}
+
+export async function POST(request: Request) {
+  const body = await request.json()
+  
+  return NextResponse.json({
+    received: body,
+    status: 'success'
+  }, { status: 201 })
+}
+`
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      'components': {
+        type: 'folder', open: false,
+        children: {
+          'Button.tsx': {
+            type: 'file',
+            content: `interface ButtonProps {
+  children: React.ReactNode
+  variant?: 'primary' | 'secondary' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  onClick?: () => void
+  disabled?: boolean
+  className?: string
+}
+
+export default function Button({
+  children,
+  variant = 'primary',
+  size = 'md',
+  onClick,
+  disabled = false,
+  className = '',
+}: ButtonProps) {
+  const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-all'
+  const variants = {
+    primary: 'bg-purple-600 text-white hover:bg-purple-700',
+    secondary: 'border border-gray-700 text-gray-300 hover:border-gray-500',
+    ghost: 'text-gray-400 hover:text-white hover:bg-gray-800',
+  }
+  const sizes = {
+    sm: 'px-3 py-1.5 text-sm',
+    md: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
+  }
+
+  return (
+    <button
+      className={\`\${base} \${variants[variant]} \${sizes[size]} \${className}\`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  )
+}
+`
+          },
+          'Card.tsx': {
+            type: 'file',
+            content: `interface CardProps {
+  title?: string
+  description?: string
+  children?: React.ReactNode
+  className?: string
+}
+
+export default function Card({ title, description, children, className = '' }: CardProps) {
+  return (
+    <div className={\`rounded-xl border border-gray-800 bg-gray-900 p-6 \${className}\`}>
+      {title && <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>}
+      {description && <p className="text-gray-400 text-sm leading-relaxed mb-4">{description}</p>}
+      {children}
+    </div>
+  )
+}
+`
+          }
+        }
+      },
+      'lib': {
+        type: 'folder', open: false,
+        children: {
+          'utils.ts': {
+            type: 'file',
+            content: `import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+export function formatDate(date: Date | string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(date))
+}
+
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
+    .trim()
+}
+
+export async function fetcher<T>(url: string): Promise<T> {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error('Fetch failed')
+  return res.json()
+}
+`
+          }
+        }
+      },
+      'next.config.js': {
+        type: 'file',
+        content: `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Enable App Router (default in Next.js 13+)
+  experimental: {
+    // Server Actions (stable in Next.js 14)
+    serverActions: {
+      allowedOrigins: ['localhost:3000'],
+    },
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.unsplash.com',
+      },
+    ],
+  },
+  // Enable React Server Components (default)
+  reactStrictMode: true,
+}
+
+module.exports = nextConfig
+`
+      },
+      'tailwind.config.ts': {
+        type: 'file',
+        content: `import type { Config } from 'tailwindcss'
+
+const config: Config = {
+  content: [
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        brand: {
+          50: '#f5f3ff',
+          500: '#7c3aed',
+          600: '#6d28d9',
+          900: '#2e1065',
+        },
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)'],
+      },
+    },
+  },
+  plugins: [],
+}
+
+export default config
+`
+      },
+      'tsconfig.json': {
+        type: 'file',
+        content: JSON.stringify({
+          compilerOptions: {
+            target: "es5", lib: ["dom", "dom.iterable", "esnext"],
+            allowJs: true, skipLibCheck: true, strict: true,
+            noEmit: true, esModuleInterop: true, module: "esnext",
+            moduleResolution: "bundler", resolveJsonModule: true,
+            isolatedModules: true, jsx: "preserve", incremental: true,
+            plugins: [{ name: "next" }],
+            paths: { "@/*": ["./*"] }
+          },
+          include: ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+          exclude: ["node_modules"]
+        }, null, 2)
       },
       'package.json': {
         type: 'file',
         content: JSON.stringify({
-          name: "my-app",
-          version: "1.0.0",
-          description: "My WebIDE project",
-          scripts: { start: "live-server", build: "echo Building..." },
-          dependencies: {}
+          name: "my-next-app",
+          version: "0.1.0",
+          private: true,
+          scripts: {
+            dev: "next dev",
+            build: "next build",
+            start: "next start",
+            lint: "next lint",
+            "type-check": "tsc --noEmit"
+          },
+          dependencies: {
+            next: "14.0.4",
+            react: "^18",
+            "react-dom": "^18"
+          },
+          devDependencies: {
+            typescript: "^5",
+            "@types/node": "^20",
+            "@types/react": "^18",
+            "@types/react-dom": "^18",
+            autoprefixer: "^10",
+            postcss: "^8",
+            tailwindcss: "^3",
+            eslint: "^8",
+            "eslint-config-next": "14.0.4"
+          }
         }, null, 2)
-      },
-      'README.md': {
-        type: 'file',
-        content: `# My App
-
-A web app built with WebIDE.
-
-## Getting Started
-
-1. Edit \`index.html\`, \`style.css\`, and \`app.js\`
-2. See live preview on the right panel
-3. Use the terminal to run commands
-
-## Features
-
-- Live preview with instant hot reload
-- Monaco code editor (same as VS Code)
-- Integrated terminal
-- File explorer with create/rename/delete
-- Search across all files
-`
       }
     }
   }
 };
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
 const FILE_ICONS = {
-  tsx: '⚛️', ts: '📘', js: '💛', jsx: '⚛️',
-  json: '📋', css: '🎨', html: '🌐', md: '📝',
-  env: '🔒', local: '🔒', gitignore: '🙈',
-  png: '🖼️', jpg: '🖼️', svg: '🎭', ico: '🖼️',
+  tsx: '⚛', ts: '🔷', js: '🟨', jsx: '⚛',
+  json: '📋', css: '🎨', md: '📝', svg: '🎭',
+  env: '🔒', gitignore: '🙈', toml: '⚙️', yml: '⚙️', yaml: '⚙️',
 };
 function getFileIcon(name) {
   const ext = name.split('.').pop()?.toLowerCase();
   if (name.startsWith('.env')) return '🔒';
   if (name === 'package.json') return '📦';
+  if (name === 'next.config.js' || name === 'next.config.ts') return '▲';
   if (name === 'tsconfig.json') return '⚙️';
+  if (name === 'tailwind.config.ts' || name === 'tailwind.config.js') return '💨';
   return FILE_ICONS[ext] || '📄';
 }
 function getLanguage(name) {
   const ext = name.split('.').pop()?.toLowerCase();
-  const map = { tsx:'typescript', ts:'typescript', jsx:'javascript', js:'javascript', json:'json', css:'css', html:'html', md:'markdown' };
+  const map = { tsx:'typescript', ts:'typescript', jsx:'javascript', js:'javascript', json:'json', css:'css', html:'html', md:'markdown', mdx:'markdown' };
   return map[ext] || 'plaintext';
 }
 function flattenFiles(node, path = '', result = []) {
-  if (node.type === 'file') { result.push({ path, content: node.content || '' }); }
-  else if (node.children) { Object.entries(node.children).forEach(([k, v]) => flattenFiles(v, path ? `${path}/${k}` : k, result)); }
+  if (node.type === 'file') result.push({ path, content: node.content || '' });
+  else if (node.children) Object.entries(node.children).forEach(([k,v]) => flattenFiles(v, path ? `${path}/${k}` : k, result));
   return result;
 }
 function getNodeAtPath(fs, pathArr) {
@@ -502,55 +882,255 @@ function deleteNodeAtPath(fs, pathArr) {
 }
 function pathToArray(path) { return path.split('/').filter(Boolean); }
 
-// ─── LIVE PREVIEW BUILDER ────────────────────────────────────────────────────
+function getNextRouteType(filename) {
+  if (filename === 'page.tsx' || filename === 'page.ts' || filename === 'page.jsx' || filename === 'page.js') return 'page';
+  if (filename === 'layout.tsx' || filename === 'layout.ts') return 'layout';
+  if (filename === 'route.ts' || filename === 'route.js') return 'api';
+  if (filename === 'loading.tsx') return 'loading';
+  if (filename === 'error.tsx') return 'error';
+  if (filename === 'not-found.tsx') return 'error';
+  if (filename === 'template.tsx') return 'layout';
+  return null;
+}
+
 function buildLivePreview(fileSystem, fileContents) {
-  // Collect all files
   const files = {};
   const rootKey = Object.keys(fileSystem)[0];
   if (!rootKey) return '';
-  const root = fileSystem[rootKey];
-  flattenFiles(root, '').forEach(({ path, content }) => {
+  flattenFiles(fileSystem[rootKey], '').forEach(({ path, content }) => {
     const fullPath = `${rootKey}/${path}`;
     files[path] = fileContents[fullPath] !== undefined ? fileContents[fullPath] : content;
   });
-
-  // Find index.html
-  let html = files['index.html'] || '';
-  if (!html) {
-    // Try to find any html
-    const htmlFile = Object.keys(files).find(k => k.endsWith('.html'));
-    html = htmlFile ? files[htmlFile] : '';
-  }
+  const css = files['app/globals.css'] || '';
+  const layoutSrc = files['app/layout.tsx'] || '';
+  const pageSrc = files['app/page.tsx'] || '';
   
-  if (!html) {
-    // Generate a simple preview for non-HTML projects
-    return `<!DOCTYPE html><html><head><style>body{background:#0d1117;color:#e6edf3;font-family:monospace;padding:20px;}</style></head><body><h2>📄 No index.html found</h2><p>Create an index.html file to see live preview.</p></body></html>`;
-  }
+  const cleanTsx = (src) => src
+    .replace(/import\s+.*?from\s+['"].*?['"]\s*\n?/g, '')
+    .replace(/export\s+const\s+metadata[^;]+;/gs, '')
+    .replace(/export\s+default\s+function\s+(\w+)\s*\([^)]*\)\s*\{/, 'function $1() {')
+    .replace(/export\s+default\s+function\s+(\w+)\s*\([^)]*\)\s*:/g, 'function $1() ')
+    .replace(/:\s*\{[\s\S]*?\}/g, '')
+    .replace(/:\s*\w+(?:\s*\|\s*\w+)*/g, '')
+    .replace(/interface\s+\w+\s*\{[\s\S]*?\}/g, '')
+    .replace(/type\s+\w+\s*=[\s\S]*?;/g, '')
+    .replace(/className=\{`([^`]*)`\}/g, 'class="$1"')
+    .replace(/className="([^"]*)"/g, 'class="$1"')
+    .replace(/\{`([^`]*)`\}/g, '$1')
+    .replace(/htmlFor=/g, 'for=')
+    .replace(/\/>/g, '/>');
 
-  // Inline CSS files
-  let processed = html.replace(/<link[^>]+href=["']([^"']+\.css)["'][^>]*\/?>/gi, (match, href) => {
-    const cssKey = href.replace(/^\.\//, '');
-    const css = files[cssKey] || '';
-    return css ? `<style>/* ${href} */\n${css}</style>` : match;
-  });
-
-  // Inline JS files
-  processed = processed.replace(/<script[^>]+src=["']([^"']+\.js)["'][^>]*><\/script>/gi, (match, src) => {
-    const jsKey = src.replace(/^\.\//, '');
-    const js = files[jsKey] || '';
-    return js ? `<script>/* ${src} */\n${js}<\/script>` : match;
-  });
-
-  return processed;
+  const pageBody = cleanTsx(pageSrc).replace(/function \w+\(\)\s*\{/, '').replace(/^}$/m, '').replace(/return\s*\(/, '').replace(/\);?\s*$/, '');
+  
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Next.js Preview</title>
+<style>${css}</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-brand">MyApp</div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">About</a>
+    <a href="#">Blog</a>
+  </div>
+</nav>
+<main>
+<div class="container">
+${pageBody || '<div style="color:#888;padding:40px;text-align:center">Preview renders app/page.tsx</div>'}
+</div>
+</main>
+</body>
+</html>`;
 }
 
-// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+// ─── NEXT.JS PACKAGE DB ───────────────────────────────────────────────────────
+const NEXT_PACKAGES = {
+  'next-auth': { version: '5.0.0-beta.4', desc: 'Authentication for Next.js' },
+  '@prisma/client': { version: '5.7.1', desc: 'Prisma database client' },
+  'prisma': { version: '5.7.1', desc: 'Prisma ORM CLI' },
+  'zod': { version: '3.22.4', desc: 'TypeScript schema validation' },
+  'zustand': { version: '4.4.7', desc: 'Lightweight state management' },
+  '@tanstack/react-query': { version: '5.13.4', desc: 'Async state management' },
+  'tailwind-merge': { version: '2.2.0', desc: 'Merge Tailwind classes' },
+  'clsx': { version: '2.1.0', desc: 'Conditional classnames' },
+  'lucide-react': { version: '0.303.0', desc: 'Beautiful icon library' },
+  '@radix-ui/react-dialog': { version: '1.0.5', desc: 'Accessible dialog primitives' },
+  'framer-motion': { version: '10.18.0', desc: 'Animation library' },
+  'date-fns': { version: '3.0.6', desc: 'Date utility library' },
+  'stripe': { version: '14.12.0', desc: 'Stripe payments' },
+  'openai': { version: '4.24.1', desc: 'OpenAI API client' },
+  '@uploadthing/next': { version: '6.3.3', desc: 'File uploads for Next.js' },
+  'drizzle-orm': { version: '0.29.3', desc: 'TypeScript ORM' },
+  'resend': { version: '2.1.0', desc: 'Email API' },
+  '@vercel/analytics': { version: '1.1.2', desc: 'Vercel Analytics' },
+  'sharp': { version: '0.33.1', desc: 'Image processing' },
+};
+
+// ─── SCAFFOLD TEMPLATES ───────────────────────────────────────────────────────
+function getScaffoldContent(type, name) {
+  const pascal = name.charAt(0).toUpperCase() + name.slice(1).replace(/-([a-z])/g, g => g[1].toUpperCase());
+  const templates = {
+    'server-component': `// Server Component (default in App Router)
+interface ${pascal}Props {
+  // props here
+}
+
+export default async function ${pascal}({ }: ${pascal}Props) {
+  // This runs on the server - can use async/await directly
+  // const data = await fetch('/api/data').then(r => r.json())
+  
+  return (
+    <section>
+      <h2>${pascal}</h2>
+    </section>
+  )
+}
+`,
+    'client-component': `'use client'
+
+import { useState, useEffect } from 'react'
+
+interface ${pascal}Props {
+  // props here
+}
+
+export default function ${pascal}({ }: ${pascal}Props) {
+  const [state, setState] = useState('')
+
+  useEffect(() => {
+    // client-side effect
+  }, [])
+
+  return (
+    <div>
+      <h2>${pascal}</h2>
+      <p>{state}</p>
+    </div>
+  )
+}
+`,
+    'api-route': `import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  
+  return NextResponse.json({ 
+    message: 'Success',
+    data: []
+  })
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json()
+  
+  // Validate with Zod
+  // const parsed = schema.parse(body)
+  
+  return NextResponse.json({ 
+    created: true,
+    data: body
+  }, { status: 201 })
+}
+
+export async function DELETE(request: NextRequest) {
+  return NextResponse.json({ deleted: true })
+}
+`,
+    'page': `import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: '${pascal}',
+  description: '${pascal} page',
+}
+
+export default function ${pascal}Page() {
+  return (
+    <main>
+      <div className="container">
+        <h1>${pascal}</h1>
+      </div>
+    </main>
+  )
+}
+`,
+    'layout': `export default function ${pascal}Layout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="${name.toLowerCase()}-layout">
+      {children}
+    </div>
+  )
+}
+`,
+    'server-action': `'use server'
+
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+
+export async function ${name}Action(formData: FormData) {
+  const data = {
+    field: formData.get('field') as string,
+  }
+
+  // Validate
+  if (!data.field) {
+    return { error: 'Field is required' }
+  }
+
+  // Do work (DB call, etc.)
+  
+  revalidatePath('/')
+  // redirect('/success')
+  
+  return { success: true }
+}
+`,
+    'hook': `'use client'
+
+import { useState, useEffect } from 'react'
+
+export function use${pascal}() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true)
+        // const result = await fetch('/api/${name}').then(r => r.json())
+        // setData(result)
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'))
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  return { data, loading, error }
+}
+`,
+  };
+  return templates[type] || templates['server-component'];
+}
+
+// ─── COMPONENTS ───────────────────────────────────────────────────────────────
 function Notifications({ notes }) {
   return (
     <div className="notifications">
       {notes.map(n => (
         <div key={n.id} className={`notification ${n.type}`}>
-          <span>{n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : 'ℹ'}</span>
+          <span>{n.type==='success'?'✓':n.type==='error'?'✗':n.type==='warn'?'⚠':'ℹ'}</span>
           <span>{n.message}</span>
         </div>
       ))}
@@ -558,77 +1138,62 @@ function Notifications({ notes }) {
   );
 }
 
-// ─── CONTEXT MENU ─────────────────────────────────────────────────────────────
 function ContextMenu({ x, y, items, onClose }) {
   useEffect(() => {
-    const handler = () => onClose();
-    document.addEventListener('click', handler);
-    document.addEventListener('contextmenu', handler);
-    return () => { document.removeEventListener('click', handler); document.removeEventListener('contextmenu', handler); };
+    const h = () => onClose();
+    document.addEventListener('click', h);
+    document.addEventListener('contextmenu', h);
+    return () => { document.removeEventListener('click', h); document.removeEventListener('contextmenu', h); };
   }, [onClose]);
   return (
     <div className="ctx-menu" style={{ left: x, top: y }}>
-      {items.map((item, i) =>
-        item === 'sep' ? <div key={i} className="ctx-separator" /> :
-        <div key={i} className={`ctx-item ${item.danger ? 'danger' : ''}`} onClick={e => { e.stopPropagation(); item.action(); onClose(); }}>
-          <span>{item.icon && <span style={{marginRight:4}}>{item.icon}</span>}{item.label}</span>
-          {item.shortcut && <span className="ctx-shortcut">{item.shortcut}</span>}
+      {items.map((item, i) => item==='sep' ? <div key={i} className="ctx-separator"/> :
+        <div key={i} className={`ctx-item ${item.danger?'danger':''}`} onClick={e => { e.stopPropagation(); item.action(); onClose(); }}>
+          <span>{item.icon && <span style={{marginRight:5}}>{item.icon}</span>}{item.label}</span>
+          {item.shortcut && <span style={{fontSize:10,color:'var(--text3)',fontFamily:'var(--font-mono)'}}>{item.shortcut}</span>}
         </div>
       )}
     </div>
   );
 }
 
-// ─── FILE TREE ITEM ───────────────────────────────────────────────────────────
 function FileTreeItem({ name, node, path, depth, selectedFile, onSelect, onToggle, onRightClick, renamingPath, onRenameCommit }) {
   const inputRef = useRef(null);
-  useEffect(() => { if (renamingPath === path && inputRef.current) { inputRef.current.focus(); inputRef.current.select(); } }, [renamingPath, path]);
+  useEffect(() => { if (renamingPath===path && inputRef.current) { inputRef.current.focus(); inputRef.current.select(); } }, [renamingPath, path]);
   const isFolder = node.type === 'folder';
+  const routeType = !isFolder ? getNextRouteType(name) : null;
+  const isDynamic = name.startsWith('[') && name.endsWith(']');
+  
   return (
     <>
       <div
-        className={`file-tree-item ${selectedFile === path ? 'selected' : ''}`}
-        style={{ paddingLeft: depth * 12 + 4 }}
+        className={`file-tree-item ${selectedFile===path?'selected':''}`}
+        style={{ paddingLeft: depth*12+4 }}
         onClick={() => isFolder ? onToggle(path) : onSelect(path)}
         onContextMenu={e => { e.preventDefault(); e.stopPropagation(); onRightClick(e, path, node); }}
       >
-        {isFolder ? <span className={`file-caret ${node.open ? 'open' : ''}`}>▶</span> : <span className="file-caret" />}
-        <span className="file-icon">{isFolder ? (node.open ? '📂' : '📁') : getFileIcon(name)}</span>
-        {renamingPath === path ? (
+        {isFolder ? <span className={`file-caret ${node.open?'open':''}`}>▶</span> : <span className="file-caret"/>}
+        <span className="file-icon">{isFolder ? (isDynamic ? '🔀' : node.open?'📂':'📁') : getFileIcon(name)}</span>
+        {renamingPath===path ? (
           <input ref={inputRef} className="file-name-input" defaultValue={name}
             onClick={e => e.stopPropagation()}
-            onKeyDown={e => { if (e.key === 'Enter') onRenameCommit(path, e.target.value); if (e.key === 'Escape') onRenameCommit(path, null); }}
+            onKeyDown={e => { if (e.key==='Enter') onRenameCommit(path, e.target.value); if (e.key==='Escape') onRenameCommit(path, null); }}
             onBlur={e => onRenameCommit(path, e.target.value)} />
         ) : (
-          <span className="file-name">{name}</span>
+          <span className="file-name" style={isDynamic?{color:'var(--yellow)'}:{}}>{name}</span>
         )}
+        {routeType && <span className={`route-badge ${routeType}`}>{routeType}</span>}
       </div>
-      {isFolder && node.open && node.children && Object.entries(node.children).sort(([,a],[,b]) => a.type === b.type ? 0 : a.type === 'folder' ? -1 : 1).map(([childName, childNode]) => (
-        <FileTreeItem key={childName} name={childName} node={childNode} path={`${path}/${childName}`}
-          depth={depth + 1} selectedFile={selectedFile} onSelect={onSelect} onToggle={onToggle}
-          onRightClick={onRightClick} renamingPath={renamingPath} onRenameCommit={onRenameCommit} />
-      ))}
+      {isFolder && node.open && node.children && Object.entries(node.children)
+        .sort(([,a],[,b]) => a.type===b.type ? 0 : a.type==='folder'?-1:1)
+        .map(([childName, childNode]) => (
+          <FileTreeItem key={childName} name={childName} node={childNode} path={`${path}/${childName}`}
+            depth={depth+1} selectedFile={selectedFile} onSelect={onSelect} onToggle={onToggle}
+            onRightClick={onRightClick} renamingPath={renamingPath} onRenameCommit={onRenameCommit} />
+        ))}
     </>
   );
 }
-
-// ─── TERMINAL ─────────────────────────────────────────────────────────────────
-const PACKAGES_DB = {
-  'axios': { version: '1.6.2', desc: 'Promise based HTTP client' },
-  'lodash': { version: '4.17.21', desc: 'Utility library' },
-  'zod': { version: '3.22.4', desc: 'Schema validation' },
-  'zustand': { version: '4.4.7', desc: 'State management' },
-  'tailwindcss': { version: '3.3.5', desc: 'Utility-first CSS framework' },
-  'framer-motion': { version: '10.16.5', desc: 'Animation library' },
-  '@tanstack/react-query': { version: '5.13.4', desc: 'Async state management' },
-  'prisma': { version: '5.7.1', desc: 'Next-generation ORM' },
-  'next-auth': { version: '4.24.5', desc: 'Authentication for Next.js' },
-  'clsx': { version: '2.0.0', desc: 'Conditional classnames' },
-  'date-fns': { version: '2.30.0', desc: 'Date utility library' },
-  'uuid': { version: '9.0.1', desc: 'UUID generation' },
-  'stripe': { version: '14.7.0', desc: 'Stripe API library' },
-  'openai': { version: '4.20.1', desc: 'OpenAI API client' },
-};
 
 function Terminal({ lines, onCommand }) {
   const [input, setInput] = useState('');
@@ -638,22 +1203,22 @@ function Terminal({ lines, onCommand }) {
   const inputRef = useRef(null);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [lines]);
   const handleKey = e => {
-    if (e.key === 'Enter' && input.trim()) {
+    if (e.key==='Enter' && input.trim()) {
       onCommand(input.trim());
       setHistory(h => [input.trim(), ...h].slice(0, 50));
       setHistoryIdx(-1);
       setInput('');
     }
-    if (e.key === 'ArrowUp') { e.preventDefault(); setHistoryIdx(i => { const n = Math.min(i+1,history.length-1); setInput(history[n]||''); return n; }); }
-    if (e.key === 'ArrowDown') { e.preventDefault(); setHistoryIdx(i => { const n = Math.max(i-1,-1); setInput(n===-1?'':history[n]); return n; }); }
-    if (e.key === 'l' && e.ctrlKey) { e.preventDefault(); onCommand('clear'); }
+    if (e.key==='ArrowUp') { e.preventDefault(); setHistoryIdx(i => { const n=Math.min(i+1,history.length-1); setInput(history[n]||''); return n; }); }
+    if (e.key==='ArrowDown') { e.preventDefault(); setHistoryIdx(i => { const n=Math.max(i-1,-1); setInput(n===-1?'':history[n]); return n; }); }
+    if (e.key==='l' && e.ctrlKey) { e.preventDefault(); onCommand('clear'); }
   };
   return (
     <div className="panel-content" onClick={() => inputRef.current?.focus()}>
       {lines.map((line, i) => (
         <div key={i} className="terminal-line">
           {line.cmd && <div className="terminal-prompt"><span className="terminal-prompt-symbol">❯</span><span>{line.cmd}</span></div>}
-          {line.output !== undefined && <div className={`terminal-output ${line.type||''}`} dangerouslySetInnerHTML={{ __html: line.output }} />}
+          {line.output !== undefined && <div className={`terminal-output ${line.type||''}`} dangerouslySetInnerHTML={{ __html: line.output }}/>}
         </div>
       ))}
       <div className="terminal-input-row">
@@ -661,35 +1226,27 @@ function Terminal({ lines, onCommand }) {
         <input ref={inputRef} className="terminal-input" value={input} onChange={e => setInput(e.target.value)}
           onKeyDown={handleKey} spellCheck={false} autoComplete="off" placeholder="Type a command..." />
       </div>
-      <div ref={bottomRef} />
+      <div ref={bottomRef}/>
     </div>
   );
 }
 
-// ─── LIVE PREVIEW PANE ────────────────────────────────────────────────────────
 function LivePreviewPane({ html, onClose, onRefresh, isLive }) {
   const iframeRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [zoom, setZoom] = useState(100);
   const [device, setDevice] = useState('desktop');
-
   const deviceWidths = { desktop: '100%', tablet: '768px', mobile: '375px' };
-
   useEffect(() => {
     if (!iframeRef.current || !html) return;
     setLoading(true);
-    // Use srcdoc instead of blob URL to avoid sandbox restrictions
     iframeRef.current.srcdoc = html;
     iframeRef.current.onload = () => setLoading(false);
   }, [html]);
-
   return (
     <div className="live-preview-pane">
       <div className="preview-toolbar">
-        <div style={{display:'flex',alignItems:'center',gap:6}}>
-          {isLive && <><div style={{width:8,height:8,borderRadius:'50%',background:'var(--accent2)',animation:'pulse 1.5s infinite'}} /><span style={{fontSize:10,color:'var(--accent2)',fontWeight:600}}>LIVE</span></>}
-        </div>
-        <div style={{display:'flex',gap:4,marginLeft:4}}>
+        {isLive && <><div style={{width:8,height:8,borderRadius:'50%',background:'var(--green)',animation:'pulse 1.5s infinite'}}/><span style={{fontSize:10,color:'var(--green)',fontWeight:700}}>LIVE</span></>}
+        <div style={{display:'flex',gap:3}}>
           {['desktop','tablet','mobile'].map(d => (
             <button key={d} className="preview-btn" onClick={() => setDevice(d)}
               style={device===d?{background:'var(--surface3)',color:'var(--text)',borderColor:'var(--accent)'}:{}}>
@@ -697,60 +1254,47 @@ function LivePreviewPane({ html, onClose, onRefresh, isLive }) {
             </button>
           ))}
         </div>
-        <input className="preview-url-bar" value="local://my-app/index.html" readOnly />
-        <button className="preview-btn" onClick={onRefresh} title="Refresh">↻</button>
-        <select className="preview-btn" value={zoom} onChange={e => setZoom(Number(e.target.value))} style={{cursor:'pointer'}}>
-          {[50,75,100,125,150].map(z => <option key={z} value={z}>{z}%</option>)}
-        </select>
-        <button className="preview-btn" onClick={onClose} title="Close Preview">✕</button>
+        <input className="preview-url-bar" value="http://localhost:3000" readOnly/>
+        <button className="preview-btn" onClick={onRefresh}>↻</button>
+        <button className="preview-btn" onClick={onClose}>✕</button>
       </div>
-      <div className="preview-frame-wrap">
-        {loading && <div className="preview-loading"><div className="preview-spinner"/><span>Loading preview...</span></div>}
-        <div style={{display:'flex',justifyContent:'center',height:'100%',overflowY:'auto',background:'var(--surface3)',padding: device!=='desktop'?'12px 0':0}}>
-          {html ? (
-            <iframe ref={iframeRef} className="preview-frame" title="live-preview"
-              style={{
-                width: deviceWidths[device],
-                height: device!=='desktop'?'667px':'100%',
-                transform: `scale(${zoom/100})`,
-                transformOrigin: 'top center',
-                border: device!=='desktop'?'1px solid var(--border)':'none',
-                borderRadius: device!=='desktop'?'12px':'0',
-                boxShadow: device!=='desktop'?'0 8px 32px rgba(0,0,0,0.3)':'none',
-              }}
-              sandbox="allow-scripts allow-same-origin allow-forms allow-modals allow-popups" />
-          ) : (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:12,color:'var(--text3)'}}>
-              <span style={{fontSize:36}}>▶</span>
-              <span style={{fontSize:13}}>Click <b style={{color:'var(--accent2)'}}>Live Server</b> or press <b style={{color:'var(--accent2)'}}>F5</b> to start</span>
-              <button onClick={onRefresh} style={{background:'var(--accent2)',border:'none',color:'#000',fontWeight:700,padding:'8px 20px',borderRadius:6,cursor:'pointer',fontSize:12}}>▶ Preview Now</button>
-            </div>
-          )}
-        </div>
+      <div style={{flex:1,overflow:'hidden',background:'#fff',position:'relative',display:'flex',justifyContent:'center',padding:device!=='desktop'?'12px 0':0,background:'var(--surface3)'}}>
+        {loading && <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--surface)',color:'var(--text3)',fontSize:13,gap:8,zIndex:10}}>
+          <div style={{width:16,height:16,border:'2px solid var(--border)',borderTopColor:'var(--accent)',borderRadius:'50%',animation:'spin 0.7s linear infinite'}}/>Loading...
+        </div>}
+        {html ? (
+          <iframe ref={iframeRef} className="preview-frame" title="next-preview"
+            style={{width:deviceWidths[device],height:device!=='desktop'?'667px':'100%',border:device!=='desktop'?'1px solid var(--border)':'none',borderRadius:device!=='desktop'?'12px':'0'}}
+            sandbox="allow-scripts allow-same-origin allow-forms allow-modals"/>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:12,color:'var(--text3)'}}>
+            <span style={{fontSize:32}}>▲</span>
+            <span style={{fontSize:13,fontWeight:600}}>Start Dev Server</span>
+            <button onClick={onRefresh} style={{background:'var(--green)',border:'none',color:'#000',fontWeight:700,padding:'8px 20px',borderRadius:6,cursor:'pointer',fontSize:12}}>▶ Preview</button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── NPM PANEL ────────────────────────────────────────────────────────────────
 function NpmPanel({ packages, onInstall, onRemove }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const handleSearch = () => {
     if (!query.trim()) return;
     const q = query.toLowerCase();
-    const found = Object.entries(PACKAGES_DB).filter(([k,v]) => k.includes(q) || v.desc.toLowerCase().includes(q)).map(([k,v]) => ({ name: k, ...v }));
-    setResults(found.length ? found : [{ name: query, version: 'latest', desc: 'Custom package' }]);
+    const found = Object.entries(NEXT_PACKAGES).filter(([k,v]) => k.includes(q) || v.desc.toLowerCase().includes(q)).map(([k,v]) => ({ name:k, ...v }));
+    setResults(found.length ? found : [{ name: query, version: 'latest', desc: 'Package' }]);
   };
   return (
     <div className="npm-panel">
-      <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:600,marginBottom:4}}>📦 NPM Packages</div>
+      <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:700,marginBottom:4}}>📦 Next.js Packages</div>
       <div className="npm-search">
-        <input className="npm-input" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==='Enter'&&handleSearch()} placeholder="Search packages..." />
+        <input className="npm-input" value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key==='Enter'&&handleSearch()} placeholder="next-auth, prisma, zod..."/>
         <button className="npm-btn" onClick={handleSearch}>Search</button>
       </div>
       {results.length > 0 && <div className="pkg-list">
-        <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',padding:'4px 0'}}>Results</div>
         {results.map(pkg => (
           <div key={pkg.name} className="pkg-item">
             <div style={{flex:1,minWidth:0}}><div className="pkg-name">{pkg.name}</div><div style={{fontSize:10,color:'var(--text3)',marginTop:1}}>{pkg.desc}</div></div>
@@ -760,7 +1304,7 @@ function NpmPanel({ packages, onInstall, onRemove }) {
       </div>}
       <div className="pkg-list">
         <div style={{fontSize:10,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'0.5px',padding:'4px 0'}}>Installed ({packages.length})</div>
-        {packages.length === 0 && <div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>No packages installed yet</div>}
+        {packages.length===0 && <div style={{fontSize:12,color:'var(--text3)',padding:'8px 0'}}>No extra packages yet</div>}
         {packages.map(pkg => (
           <div key={pkg.name} className="pkg-item">
             <span className="pkg-name">{pkg.name}</span>
@@ -773,49 +1317,90 @@ function NpmPanel({ packages, onInstall, onRemove }) {
   );
 }
 
-// ─── AI PANEL ─────────────────────────────────────────────────────────────────
-function AICopilotPanel({ currentFile, currentContent }) {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const SUGGESTIONS = ['Improve this CSS', 'Add a dark mode toggle', 'Make it responsive', 'Add animations', 'Fix any bugs'];
-  const sendMessage = async (text) => {
-    if (!text.trim()) return;
-    setMessages(m => [...m, { role: 'user', text }]);
-    setInput('');
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    const replies = [
-      `For <code>${currentFile || 'your file'}</code>, I suggest adding error boundaries and loading states. Here's a pattern:\n\n<code>try { ... } catch(e) { console.error(e); }</code>`,
-      `To improve your CSS, consider using CSS custom properties and media queries for responsive design. Your current file has ${(currentContent||'').split('\n').length} lines.`,
-      `For better performance, lazy load images and defer non-critical scripts. Use <code>loading="lazy"</code> on images.`,
-    ];
-    setMessages(m => [...m, { role: 'assistant', text: replies[m.length % replies.length] }]);
-    setLoading(false);
+function RouteMapPanel({ fileSystem, onOpenFile }) {
+  const routes = [];
+  const root = fileSystem['my-next-app'];
+  if (root?.children?.app) {
+    const scan = (node, routePath) => {
+      if (!node.children) return;
+      Object.entries(node.children).forEach(([name, child]) => {
+        const routeType = getNextRouteType(name);
+        if (routeType) {
+          routes.push({ path: routePath || '/', type: routeType, file: `app${routePath}/${name}`, fullPath: `my-next-app/app${routePath.replace(/\//g,'/')}/${name}` });
+        }
+        if (child.type==='folder') scan(child, `${routePath}/${name}`);
+      });
+    };
+    scan(root.children.app, '');
+  }
+  return (
+    <div className="route-map">
+      <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:700}}>App Router Routes</div>
+      {routes.map((r, i) => (
+        <div key={i} className="route-item" onClick={() => onOpenFile(r.fullPath)}>
+          <span className={`route-type ${r.type}`}>{r.type}</span>
+          <span className="route-path">{r.path || '/'}</span>
+          <span className="route-file">{r.file.split('/').pop()}</span>
+        </div>
+      ))}
+      {routes.length===0 && <div style={{fontSize:12,color:'var(--text3)'}}>No routes found</div>}
+    </div>
+  );
+}
+
+function ScaffoldPanel({ fileSystem, onCreateFile, onOpenFile }) {
+  const [scaffoldName, setScaffoldName] = useState('');
+  const [scaffoldType, setScaffoldType] = useState('server-component');
+  const scaffoldTypes = [
+    { id:'server-component', label:'Server Component', desc:'Async RSC, no "use client"', icon:'🖥' },
+    { id:'client-component', label:'Client Component', desc:'useState, useEffect, browser APIs', icon:'⚛' },
+    { id:'api-route', label:'API Route Handler', desc:'GET, POST, DELETE handlers', icon:'🔌' },
+    { id:'page', label:'Page', desc:'New route page.tsx', icon:'📄' },
+    { id:'layout', label:'Layout', desc:'Shared layout wrapper', icon:'🧩' },
+    { id:'server-action', label:'Server Action', desc:'"use server" actions', icon:'⚡' },
+    { id:'hook', label:'Custom Hook', desc:'Reusable React hook', icon:'🪝' },
+  ];
+  const handleGenerate = () => {
+    if (!scaffoldName.trim()) return;
+    const content = getScaffoldContent(scaffoldType, scaffoldName.trim());
+    const ext = scaffoldType==='api-route'||scaffoldType==='server-action'||scaffoldType==='hook' ? '.ts' : '.tsx';
+    const filename = scaffoldType==='api-route' ? 'route.ts' : scaffoldType==='page' ? 'page.tsx' : scaffoldType==='layout' ? 'layout.tsx' : `${scaffoldName.trim()}${ext}`;
+    onCreateFile(filename, content);
+    setScaffoldName('');
   };
   return (
-    <div className="ai-panel">
-      <div className="ai-header"><span style={{fontSize:14}}>🤖</span><span style={{fontSize:13,fontWeight:600}}>AI Copilot</span><span className="ai-badge">BETA</span></div>
-      <div className="ai-messages" style={{flex:1,minHeight:0}}>
-        {messages.length === 0 && <div className="ai-placeholder">
-          <div style={{fontSize:24,marginBottom:8}}>✨</div>
-          <div style={{fontWeight:500,color:'var(--text2)',marginBottom:8}}>AI Copilot Ready</div>
-          {SUGGESTIONS.map(s => <div key={s} style={{cursor:'pointer',background:'var(--surface3)',border:'1px solid var(--border)',borderRadius:5,padding:'5px 8px',fontSize:11,color:'var(--text3)',margin:'3px 0',transition:'all 0.1s'}} onClick={() => sendMessage(s)}>{s}</div>)}
-        </div>}
-        {messages.map((m, i) => <div key={i} className={`ai-msg ${m.role}`} dangerouslySetInnerHTML={{ __html: m.text?.replace(/\n/g, '<br/>') }} />)}
-        {loading && <div className="ai-msg assistant" style={{color:'var(--text3)'}}>Thinking...</div>}
+    <div className="scaffold-panel">
+      <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:700}}>Generate Next.js Code</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        <div style={{fontSize:11,color:'var(--text3)'}}>Type</div>
+        <select style={{background:'var(--surface3)',border:'1px solid var(--border)',color:'var(--text)',fontSize:12,padding:'7px 10px',borderRadius:6,outline:'none',fontFamily:'var(--font-ui)'}}
+          value={scaffoldType} onChange={e => setScaffoldType(e.target.value)}>
+          {scaffoldTypes.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+        </select>
+        <div style={{fontSize:10,color:'var(--text3)',marginTop:-2}}>{scaffoldTypes.find(t=>t.id===scaffoldType)?.desc}</div>
+        <div style={{fontSize:11,color:'var(--text3)',marginTop:4}}>Name</div>
+        <input className="npm-input" value={scaffoldName} onChange={e => setScaffoldName(e.target.value)}
+          onKeyDown={e => e.key==='Enter'&&handleGenerate()}
+          placeholder={scaffoldType==='api-route'?'route name':scaffoldType==='page'?'page-name':'ComponentName'}/>
+        <button className="npm-btn" onClick={handleGenerate}>Generate File</button>
       </div>
-      <div className="ai-input-row">
-        <textarea className="ai-input" rows={2} value={input} onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(input); }}}
-          placeholder="Ask AI to generate, explain, or fix code..." />
-        <button className="ai-send-btn" onClick={() => sendMessage(input)}>↑</button>
+      <div style={{borderTop:'1px solid var(--border)',paddingTop:12}}>
+        <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'0.8px',color:'var(--text3)',fontWeight:700,marginBottom:8}}>Quick Actions</div>
+        {[
+          { icon:'🔌', label:'Add API Route', desc:'app/api/[name]/route.ts', action: () => onCreateFile('route.ts', getScaffoldContent('api-route', 'example'), 'api/example') },
+          { icon:'📄', label:'Add Page', desc:'app/[route]/page.tsx', action: () => onCreateFile('page.tsx', getScaffoldContent('page', 'NewPage'), 'new-page') },
+          { icon:'🧩', label:'Add Layout', desc:'Wrap children in layout', action: () => onCreateFile('layout.tsx', getScaffoldContent('layout', 'Section'), '') },
+        ].map(({ icon, label, desc, action }) => (
+          <button key={label} className="scaffold-btn" onClick={action}>
+            <span className="scaffold-btn-icon">{icon}</span>
+            <span className="scaffold-btn-info"><div className="scaffold-btn-label">{label}</div><div className="scaffold-btn-desc">{desc}</div></span>
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
-// ─── SEARCH PANEL ─────────────────────────────────────────────────────────────
 function SearchPanel({ fileSystem, onOpenFile }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -825,11 +1410,10 @@ function SearchPanel({ fileSystem, onOpenFile }) {
     const rootKey = Object.keys(fileSystem)[0];
     if (rootKey) flattenFiles(fileSystem[rootKey], '').forEach(({ path, content }) => {
       if (!content) return;
-      const lines = content.split('\n');
-      lines.forEach((line, idx) => {
+      content.split('\n').forEach((line, idx) => {
         if (line.toLowerCase().includes(q.toLowerCase())) {
           const fp = `${rootKey}/${path}`;
-          const ex = matches.find(m => m.path === fp);
+          const ex = matches.find(m => m.path===fp);
           if (ex) ex.lines.push({ num: idx+1, text: line.trim() });
           else matches.push({ path: fp, lines: [{ num: idx+1, text: line.trim() }] });
         }
@@ -840,53 +1424,72 @@ function SearchPanel({ fileSystem, onOpenFile }) {
   const highlight = (text, q) => {
     if (!q) return <span className="search-result-text">{text}</span>;
     const idx = text.toLowerCase().indexOf(q.toLowerCase());
-    if (idx === -1) return <span className="search-result-text">{text}</span>;
+    if (idx===-1) return <span className="search-result-text">{text}</span>;
     return <span className="search-result-text">{text.slice(0,idx)}<span className="search-result-match">{text.slice(idx,idx+q.length)}</span>{text.slice(idx+q.length)}</span>;
   };
   return (
     <div className="search-panel">
-      <input className="search-input" placeholder="🔍 Search across all files..." value={query}
-        onChange={e => { setQuery(e.target.value); search(e.target.value); }} />
-      <div style={{fontSize:10,color:'var(--text3)'}}>{results.length > 0 ? `${results.reduce((a,r)=>a+r.lines.length,0)} results in ${results.length} files` : ''}</div>
+      <input className="search-input" placeholder="Search across all files..." value={query}
+        onChange={e => { setQuery(e.target.value); search(e.target.value); }}/>
+      {results.length>0 && <div style={{fontSize:11,color:'var(--text3)'}}>{results.reduce((a,r)=>a+r.lines.length,0)} results in {results.length} files</div>}
       <div className="search-results">
         {results.map(r => <div key={r.path}>
-          <div className="search-result-file">📄 {r.path.split('/').pop()} <span style={{color:'var(--text3)',fontWeight:400}}>— {r.path}</span></div>
+          <div className="search-result-file">📄 {r.path.split('/').pop()}</div>
           {r.lines.slice(0,5).map((l,i) => <div key={i} className="search-result-line" onClick={() => onOpenFile(r.path)}>
             <span className="search-result-num">{l.num}</span>{highlight(l.text.substring(0,60),query)}
           </div>)}
         </div>)}
-        {query && results.length===0 && <div style={{fontSize:12,color:'var(--text3)',padding:8}}>No results found</div>}
+        {query && results.length===0 && <div style={{fontSize:12,color:'var(--text3)',padding:8}}>No results</div>}
       </div>
     </div>
   );
 }
 
-// ─── SETTINGS PANEL ──────────────────────────────────────────────────────────
-function SettingsPanel({ settings, onUpdate }) {
+function AIPanel({ currentFile, currentContent }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const SUGGESTIONS = ['Convert to Server Component', 'Add TypeScript types', 'Add error boundary', 'Optimize with useMemo', 'Add loading state'];
+  const send = async (text) => {
+    if (!text.trim()) return;
+    setMessages(m => [...m, { role:'user', text }]);
+    setInput('');
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 1000));
+    const replies = [
+      `For <code>${currentFile||'your file'}</code>, add <code>'use client'</code> at the top if you need hooks or browser APIs. Otherwise it's a Server Component by default.`,
+      `To add TypeScript types, define an interface: <code>interface Props { children: React.ReactNode }</code> and use it as your component's parameter type.`,
+      `For data fetching in Next.js 14, use <code>async/await</code> directly in Server Components: <code>const data = await fetch('/api/data').then(r => r.json())</code>`,
+    ];
+    setMessages(m => [...m, { role:'assistant', text: replies[m.length % replies.length] }]);
+    setLoading(false);
+  };
   return (
-    <div className="settings-panel">
-      <div className="settings-section">Editor</div>
-      <div className="settings-item"><span>Font Size</span><input type="range" className="settings-slider" min={10} max={20} value={settings.fontSize} onChange={e => onUpdate('fontSize', Number(e.target.value))} /><span style={{fontSize:11,color:'var(--text3)',minWidth:24}}>{settings.fontSize}px</span></div>
-      <div className="settings-item"><span>Word Wrap</span><div className={`settings-toggle ${settings.wordWrap?'on':''}`} onClick={() => onUpdate('wordWrap', !settings.wordWrap)} /></div>
-      <div className="settings-item"><span>Minimap</span><div className={`settings-toggle ${settings.minimap?'on':''}`} onClick={() => onUpdate('minimap', !settings.minimap)} /></div>
-      <div className="settings-item"><span>Line Numbers</span><div className={`settings-toggle ${settings.lineNumbers?'on':''}`} onClick={() => onUpdate('lineNumbers', !settings.lineNumbers)} /></div>
-      <div className="settings-item"><span>Auto Save</span><div className={`settings-toggle ${settings.autoSave?'on':''}`} onClick={() => onUpdate('autoSave', !settings.autoSave)} /></div>
-      <div className="settings-item"><span>Format on Save</span><div className={`settings-toggle ${settings.formatOnSave?'on':''}`} onClick={() => onUpdate('formatOnSave', !settings.formatOnSave)} /></div>
-      <div className="settings-section" style={{marginTop:8}}>Live Preview</div>
-      <div className="settings-item"><span>Auto Refresh</span><div className={`settings-toggle ${settings.autoRefresh?'on':''}`} onClick={() => onUpdate('autoRefresh', !settings.autoRefresh)} /></div>
-      <div className="settings-item"><span>Refresh Delay</span><select className="settings-select" value={settings.refreshDelay} onChange={e => onUpdate('refreshDelay', Number(e.target.value))}>
-        <option value={300}>300ms</option><option value={800}>800ms</option><option value={1500}>1.5s</option><option value={3000}>3s</option>
-      </select></div>
-      <div className="settings-section" style={{marginTop:8}}>Appearance</div>
-      <div className="settings-item"><span>Tab Size</span><select className="settings-select" value={settings.tabSize} onChange={e => onUpdate('tabSize', Number(e.target.value))}>
-        <option value={2}>2 spaces</option><option value={4}>4 spaces</option>
-      </select></div>
+    <div className="ai-panel">
+      <div style={{display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+        <span style={{fontSize:14}}>🤖</span>
+        <span style={{fontSize:13,fontWeight:700}}>AI Copilot</span>
+        <span style={{fontSize:9,background:'linear-gradient(135deg,var(--accent),#4f46e5)',color:'#fff',padding:'2px 6px',borderRadius:4,fontWeight:700,letterSpacing:'0.5px'}}>BETA</span>
+      </div>
+      <div className="ai-messages">
+        {messages.length===0 && <div style={{color:'var(--text3)',fontSize:12,display:'flex',flexDirection:'column',gap:6}}>
+          <div style={{textAlign:'center',paddingBottom:8}}>✨ Ask about Next.js App Router</div>
+          {SUGGESTIONS.map(s => <div key={s} style={{cursor:'pointer',background:'var(--surface3)',border:'1px solid var(--border)',borderRadius:5,padding:'6px 9px',fontSize:11,color:'var(--text3)',transition:'all 0.1s'}} onClick={() => send(s)}>{s}</div>)}
+        </div>}
+        {messages.map((m,i) => <div key={i} className={`ai-msg ${m.role}`} dangerouslySetInnerHTML={{ __html: m.text?.replace(/\n/g,'<br/>') }}/>)}
+        {loading && <div className="ai-msg assistant" style={{color:'var(--text3)'}}>Thinking...</div>}
+      </div>
+      <div className="ai-input-row">
+        <textarea className="ai-input" rows={2} value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); send(input); }}}
+          placeholder="Ask about App Router, RSC, Server Actions..."/>
+        <button className="ai-send-btn" onClick={() => send(input)}>↑</button>
+      </div>
     </div>
   );
 }
 
-// ─── MODAL ───────────────────────────────────────────────────────────────────
-function Modal({ title, placeholder, defaultValue='', confirmLabel='Create', onConfirm, onCancel }) {
+function Modal({ title, desc, placeholder, defaultValue='', confirmLabel='Create', onConfirm, onCancel }) {
   const [value, setValue] = useState(defaultValue);
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
@@ -894,8 +1497,10 @@ function Modal({ title, placeholder, defaultValue='', confirmLabel='Create', onC
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-title">{title}</div>
+        {desc && <div className="modal-desc">{desc}</div>}
         <input ref={inputRef} className="modal-input" value={value} onChange={e => setValue(e.target.value)}
-          placeholder={placeholder} onKeyDown={e => { if (e.key==='Enter') onConfirm(value); if (e.key==='Escape') onCancel(); }} />
+          placeholder={placeholder}
+          onKeyDown={e => { if (e.key==='Enter') onConfirm(value); if (e.key==='Escape') onCancel(); }}/>
         <div className="modal-actions">
           <button className="modal-btn cancel" onClick={onCancel}>Cancel</button>
           <button className="modal-btn primary" onClick={() => onConfirm(value)}>{confirmLabel}</button>
@@ -905,61 +1510,51 @@ function Modal({ title, placeholder, defaultValue='', confirmLabel='Create', onC
   );
 }
 
-// ─── MENU BAR ─────────────────────────────────────────────────────────────────
 function MenuBar({ onAction }) {
   const [openMenu, setOpenMenu] = useState(null);
   const menus = {
     File: [
-      { label: 'New File', shortcut: 'Ctrl+N', action: 'newFile' },
-      { label: 'New Folder', shortcut: '', action: 'newFolder' },
+      { label:'New File', shortcut:'Ctrl+N', action:'newFile' },
+      { label:'New Folder', shortcut:'', action:'newFolder' },
       'sep',
-      { label: 'Save', shortcut: 'Ctrl+S', action: 'save' },
-      { label: 'Save All', shortcut: 'Ctrl+Shift+S', action: 'saveAll' },
-      'sep',
-      { label: 'Close Tab', shortcut: 'Ctrl+W', action: 'closeTab' },
+      { label:'Save', shortcut:'Ctrl+S', action:'save' },
+      { label:'Close Tab', shortcut:'Ctrl+W', action:'closeTab' },
     ],
     Edit: [
-      { label: 'Undo', shortcut: 'Ctrl+Z', action: 'undo' },
-      { label: 'Redo', shortcut: 'Ctrl+Y', action: 'redo' },
+      { label:'Undo', shortcut:'Ctrl+Z', action:'undo' },
+      { label:'Redo', shortcut:'Ctrl+Y', action:'redo' },
       'sep',
-      { label: 'Find', shortcut: 'Ctrl+F', action: 'find' },
-      { label: 'Replace', shortcut: 'Ctrl+H', action: 'replace' },
-      'sep',
-      { label: 'Format Document', shortcut: 'Shift+Alt+F', action: 'format' },
+      { label:'Find', shortcut:'Ctrl+F', action:'find' },
+      { label:'Format Document', shortcut:'Shift+Alt+F', action:'format' },
     ],
     View: [
-      { label: 'Toggle Preview', shortcut: 'Ctrl+Shift+P', action: 'togglePreview' },
-      { label: 'Toggle Terminal', shortcut: 'Ctrl+`', action: 'toggleTerminal' },
-      { label: 'Toggle Sidebar', shortcut: 'Ctrl+B', action: 'toggleSidebar' },
+      { label:'Toggle Preview', shortcut:'Ctrl+Shift+P', action:'togglePreview' },
+      { label:'Toggle Terminal', shortcut:'Ctrl+`', action:'toggleTerminal' },
+      { label:'Toggle Sidebar', shortcut:'Ctrl+B', action:'toggleSidebar' },
       'sep',
-      { label: 'Zoom In', shortcut: 'Ctrl++', action: 'zoomIn' },
-      { label: 'Zoom Out', shortcut: 'Ctrl+-', action: 'zoomOut' },
+      { label:'Route Map', shortcut:'', action:'showRoutes' },
     ],
     Run: [
-      { label: '▶ Start Live Server', shortcut: 'F5', action: 'startServer' },
-      { label: '⏹ Stop Server', shortcut: 'Shift+F5', action: 'stopServer' },
+      { label:'▶ Start Dev Server', shortcut:'F5', action:'startServer' },
+      { label:'⏹ Stop Server', shortcut:'Shift+F5', action:'stopServer' },
       'sep',
-      { label: 'npm run build', shortcut: '', action: 'build' },
-      { label: 'npm install', shortcut: '', action: 'install' },
+      { label:'next build', shortcut:'', action:'build' },
+      { label:'next lint', shortcut:'', action:'lint' },
+      { label:'tsc --noEmit', shortcut:'', action:'typecheck' },
     ],
-    Terminal: [
-      { label: 'New Terminal', shortcut: 'Ctrl+`', action: 'newTerminal' },
-      { label: 'Clear Terminal', shortcut: 'Ctrl+K', action: 'clearTerminal' },
+    Next: [
+      { label:'Generate Component', shortcut:'', action:'scaffold' },
+      { label:'Add API Route', shortcut:'', action:'addApiRoute' },
+      { label:'Add Page', shortcut:'', action:'addPage' },
       'sep',
-      { label: 'Run npm start', shortcut: '', action: 'npmStart' },
-    ],
-    Help: [
-      { label: 'Keyboard Shortcuts', shortcut: 'Ctrl+Shift+K', action: 'shortcuts' },
-      { label: 'About WebIDE', shortcut: '', action: 'about' },
+      { label:'View Route Map', shortcut:'', action:'showRoutes' },
     ],
   };
-
   useEffect(() => {
     const close = () => setOpenMenu(null);
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, []);
-
   return (
     <div className="titlebar-menu">
       {Object.entries(menus).map(([label, items]) => (
@@ -987,8 +1582,8 @@ function MenuBar({ onAction }) {
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function App() {
   const [fileSystem, setFileSystem] = useState(DEFAULT_FS);
-  const [openFiles, setOpenFiles] = useState([{ path: 'my-app/index.html', modified: false }]);
-  const [activeFile, setActiveFile] = useState('my-app/index.html');
+  const [openFiles, setOpenFiles] = useState([{ path:'my-next-app/app/page.tsx', modified:false }]);
+  const [activeFile, setActiveFile] = useState('my-next-app/app/page.tsx');
   const [fileContents, setFileContents] = useState({});
   const [sidebarTab, setSidebarTab] = useState('explorer');
   const [sidebarVisible, setSidebarVisible] = useState(true);
@@ -999,8 +1594,8 @@ function App() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [liveServer, setLiveServer] = useState(false);
   const [terminalLines, setTerminalLines] = useState([
-    { output: '<span class="success">WebIDE v2.0.0</span> — Browser-based IDE with Live Server', type: 'info' },
-    { output: 'Type <span class="info">help</span> for available commands. Press <span class="info">F5</span> to start live server.', type: '' },
+    { output: '<span class="success">NextIDE</span> — Next.js 14 App Router Browser IDE', type:'info' },
+    { output: 'Type <span class="info">help</span> for commands. Press <span class="info">F5</span> to start dev server.' },
     { output: '' },
   ]);
   const [installedPackages, setInstalledPackages] = useState([]);
@@ -1008,62 +1603,93 @@ function App() {
   const [modal, setModal] = useState(null);
   const [renamingPath, setRenamingPath] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [settings, setSettings] = useState({
-    fontSize: 13, wordWrap: false, minimap: true, lineNumbers: true,
-    autoSave: false, formatOnSave: false, autoRefresh: true, refreshDelay: 800, tabSize: 2
-  });
+  const [settings, setSettings] = useState({ fontSize:13, wordWrap:false, minimap:true, lineNumbers:true, autoSave:false, formatOnSave:true, autoRefresh:true, refreshDelay:800, tabSize:2 });
   const [showFind, setShowFind] = useState(false);
   const [findQuery, setFindQuery] = useState('');
-  const [problems, setProblems] = useState([]);
+  const [cursorInfo, setCursorInfo] = useState({ line:1, col:1 });
+  const [currentLang, setCurrentLang] = useState('typescript');
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const [editorMounted, setEditorMounted] = useState(false);
-  const [currentLang, setCurrentLang] = useState('html');
-  const [cursorInfo, setCursorInfo] = useState({ line: 1, col: 1 });
   const refreshTimer = useRef(null);
   const activeFileRef = useRef(activeFile);
   useEffect(() => { activeFileRef.current = activeFile; }, [activeFile]);
 
-  const notify = useCallback((message, type = 'info') => {
-    const id = Date.now() + Math.random();
+  const notify = useCallback((message, type='info') => {
+    const id = Date.now()+Math.random();
     setNotifications(n => [...n, { id, message, type }]);
-    setTimeout(() => setNotifications(n => n.filter(x => x.id !== id)), 3500);
+    setTimeout(() => setNotifications(n => n.filter(x => x.id!==id)), 3500);
   }, []);
 
-  // ── MONACO SETUP ──
+  // Monaco setup
   useEffect(() => {
     require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
     require(['vs/editor/editor.main'], monaco => {
       monacoRef.current = monaco;
-      monaco.editor.defineTheme('webide-dark', {
+      monaco.editor.defineTheme('nextide', {
         base: 'vs-dark', inherit: true,
         rules: [
-          { token: 'comment', foreground: '6e7681', fontStyle: 'italic' },
-          { token: 'keyword', foreground: 'ff7b72' },
-          { token: 'string', foreground: 'a5d6ff' },
-          { token: 'number', foreground: '79c0ff' },
-          { token: 'type', foreground: 'ffa657' },
-          { token: 'tag', foreground: '7ee787' },
-          { token: 'attribute.name', foreground: '79c0ff' },
-          { token: 'attribute.value', foreground: 'a5d6ff' },
+          { token:'comment', foreground:'5a5a7a', fontStyle:'italic' },
+          { token:'keyword', foreground:'c792ea' },
+          { token:'string', foreground:'a5d6ff' },
+          { token:'number', foreground:'f78c6c' },
+          { token:'type', foreground:'ffcb6b' },
+          { token:'tag', foreground:'7ee787' },
+          { token:'attribute.name', foreground:'79c0ff' },
+          { token:'attribute.value', foreground:'a5d6ff' },
+          { token:'variable', foreground:'f1f0ff' },
         ],
         colors: {
-          'editor.background': '#0d1117',
-          'editor.foreground': '#e6edf3',
-          'editor.lineHighlightBackground': '#161b22',
-          'editorCursor.foreground': '#58a6ff',
-          'editorLineNumber.foreground': '#3d444d',
-          'editorLineNumber.activeForeground': '#6e7681',
-          'editor.selectionBackground': '#388bfd33',
-          'editorIndentGuide.background': '#21262d',
-          'editorBracketMatch.background': '#388bfd33',
-          'editorBracketMatch.border': '#58a6ff',
+          'editor.background': '#0a0a0f',
+          'editor.foreground': '#f1f0ff',
+          'editor.lineHighlightBackground': '#111118',
+          'editorCursor.foreground': '#a78bfa',
+          'editorLineNumber.foreground': '#2a2a3d',
+          'editorLineNumber.activeForeground': '#5a5a7a',
+          'editor.selectionBackground': '#7c3aed33',
+          'editorIndentGuide.background': '#1c1c28',
+          'editorBracketMatch.background': '#7c3aed33',
+          'editorBracketMatch.border': '#a78bfa',
         }
       });
+      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+        target: monaco.languages.typescript.ScriptTarget.ESNext,
+        allowNonTsExtensions: true,
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
+        allowJs: true,
+        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        typeRoots: ['node_modules/@types'],
+      });
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        `declare module 'next/server' {
+  export class NextResponse extends Response {
+    static json(data: unknown, init?: ResponseInit): NextResponse;
+    static redirect(url: string, status?: number): NextResponse;
+    static rewrite(url: string): NextResponse;
+  }
+  export class NextRequest extends Request {
+    nextUrl: URL;
+    cookies: Map<string, string>;
+  }
+}
+declare module 'next' {
+  export interface Metadata { title?: string; description?: string; }
+}
+declare module 'next/navigation' {
+  export function useRouter(): { push: (href: string)=>void; back: ()=>void; };
+  export function usePathname(): string;
+  export function useSearchParams(): URLSearchParams;
+  export function redirect(url: string): never;
+}
+declare module 'next/cache' {
+  export function revalidatePath(path: string): void;
+  export function revalidateTag(tag: string): void;
+}
+`, 'next-types.d.ts');
       const editor = monaco.editor.create(document.getElementById('monaco-editor'), {
         value: '',
-        language: 'html',
-        theme: 'webide-dark',
+        language: 'typescript',
+        theme: 'nextide',
         fontSize: 13,
         fontFamily: "'JetBrains Mono', monospace",
         fontLigatures: true,
@@ -1075,73 +1701,49 @@ function App() {
         insertSpaces: true,
         autoIndent: 'full',
         formatOnPaste: true,
-        formatOnType: true,
         suggestOnTriggerCharacters: true,
-        quickSuggestions: true,
+        quickSuggestions: { strings: true },
         renderWhitespace: 'selection',
         bracketPairColorization: { enabled: true },
         smoothScrolling: true,
         cursorBlinking: 'phase',
         renderLineHighlight: 'gutter',
-        padding: { top: 12, bottom: 12 },
+        padding: { top: 14, bottom: 14 },
       });
       editorRef.current = editor;
-
-      monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
-        target: monaco.languages.typescript.ScriptTarget.ESNext,
-        allowNonTsExtensions: true,
-        jsx: monaco.languages.typescript.JsxEmit.React,
-        allowJs: true,
-      });
-
-      editor.onDidChangeCursorPosition(e => {
-        setCursorInfo({ line: e.position.lineNumber, col: e.position.column });
-      });
-
+      editor.onDidChangeCursorPosition(e => { setCursorInfo({ line: e.position.lineNumber, col: e.position.column }); });
       editor.onDidChangeModelContent(() => {
         const path = activeFileRef.current;
         if (!path) return;
         const val = editor.getValue();
         setFileContents(prev => ({ ...prev, [path]: val }));
-        setOpenFiles(prev => prev.map(f => f.path === path ? { ...f, modified: true } : f));
+        setOpenFiles(prev => prev.map(f => f.path===path ? { ...f, modified:true } : f));
       });
-
-      // Add keyboard shortcuts
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-        document.dispatchEvent(new CustomEvent('webide-save'));
-      });
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => {
-        setShowFind(f => !f);
-      });
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => {
-        setSidebarVisible(v => !v);
-      });
-
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => { document.dispatchEvent(new CustomEvent('nextide-save')); });
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, () => { setShowFind(f => !f); });
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, () => { setSidebarVisible(v => !v); });
       setEditorMounted(true);
     });
   }, []);
 
-  // Save event listener
   useEffect(() => {
-    const handler = () => saveFile();
-    document.addEventListener('webide-save', handler);
-    return () => document.removeEventListener('webide-save', handler);
+    const h = () => saveFile();
+    document.addEventListener('nextide-save', h);
+    return () => document.removeEventListener('nextide-save', h);
   }, []);
 
-  // Global keyboard shortcuts
   useEffect(() => {
-    const handler = e => {
-      if ((e.ctrlKey||e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
-      if ((e.ctrlKey||e.metaKey) && e.key === 'b') { e.preventDefault(); setSidebarVisible(v => !v); }
-      if ((e.ctrlKey||e.metaKey) && e.key === '`') { e.preventDefault(); setPanelVisible(v => !v); }
-      if (e.key === 'F5') { e.preventDefault(); toggleLiveServer(); }
-      if (e.key === 'Escape') { setShowFind(false); setCtxMenu(null); }
+    const h = e => {
+      if ((e.ctrlKey||e.metaKey)&&e.key==='s') { e.preventDefault(); saveFile(); }
+      if ((e.ctrlKey||e.metaKey)&&e.key==='b') { e.preventDefault(); setSidebarVisible(v=>!v); }
+      if ((e.ctrlKey||e.metaKey)&&e.key==='`') { e.preventDefault(); setPanelVisible(v=>!v); }
+      if (e.key==='F5') { e.preventDefault(); toggleLiveServer(); }
+      if (e.key==='Escape') { setShowFind(false); setCtxMenu(null); }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, []);
 
-  // ── LOAD FILE INTO EDITOR ──
   useEffect(() => {
     if (!editorMounted || !activeFile) return;
     const content = getFileContent(activeFile);
@@ -1150,43 +1752,31 @@ function App() {
     if (editorRef.current && monacoRef.current) {
       const uri = monacoRef.current.Uri.parse(`file:///${activeFile}`);
       let model = monacoRef.current.editor.getModel(uri);
-      if (!model) {
-        model = monacoRef.current.editor.createModel(content, lang, uri);
-      } else {
-        if (model.getValue() !== content) model.setValue(content);
-        monacoRef.current.editor.setModelLanguage(model, lang);
-      }
+      if (!model) model = monacoRef.current.editor.createModel(content, lang, uri);
+      else { if (model.getValue()!==content) model.setValue(content); monacoRef.current.editor.setModelLanguage(model, lang); }
       editorRef.current.setModel(model);
     }
   }, [activeFile, editorMounted]);
 
-  // Apply settings to editor
   useEffect(() => {
     if (!editorRef.current) return;
     editorRef.current.updateOptions({
-      fontSize: settings.fontSize,
-      wordWrap: settings.wordWrap ? 'on' : 'off',
-      minimap: { enabled: settings.minimap },
-      lineNumbers: settings.lineNumbers ? 'on' : 'off',
-      tabSize: settings.tabSize,
+      fontSize: settings.fontSize, wordWrap: settings.wordWrap?'on':'off',
+      minimap: { enabled: settings.minimap }, lineNumbers: settings.lineNumbers?'on':'off', tabSize: settings.tabSize,
     });
   }, [settings, editorMounted]);
 
   const getFileContent = useCallback((path) => {
-    if (fileContents[path] !== undefined) return fileContents[path];
+    if (fileContents[path]!==undefined) return fileContents[path];
     const parts = pathToArray(path);
-    const rootKey = parts[0];
     const node = getNodeAtPath({ children: fileSystem }, parts);
     return node?.content || '';
   }, [fileSystem, fileContents]);
 
-  // ── LIVE PREVIEW ──
   const refreshPreview = useCallback(() => {
-    const html = buildLivePreview(fileSystem, fileContents);
-    setPreviewHtml(html);
+    setPreviewHtml(buildLivePreview(fileSystem, fileContents));
   }, [fileSystem, fileContents]);
 
-  // Auto-refresh when files change
   useEffect(() => {
     if (!settings.autoRefresh || !liveServer) return;
     clearTimeout(refreshTimer.current);
@@ -1194,9 +1784,8 @@ function App() {
     return () => clearTimeout(refreshTimer.current);
   }, [fileContents, fileSystem, settings.autoRefresh, settings.refreshDelay, liveServer, refreshPreview]);
 
-  // Always keep preview fresh when it's visible
   useEffect(() => {
-    if (showPreview && previewHtml === '') refreshPreview();
+    if (showPreview && previewHtml==='') refreshPreview();
   }, [showPreview]);
 
   const toggleLiveServer = useCallback(() => {
@@ -1205,12 +1794,14 @@ function App() {
       if (next) {
         setShowPreview(true);
         refreshPreview();
-        addTerminalLine({ output: '<span class="success">✓ Live Server started — watching for changes</span>' });
-        addTerminalLine({ output: '<span class="info">  ⚡ Hot reload enabled — save files to refresh</span>' });
-        notify('Live Server started! 🚀', 'success');
+        addTerminalLine({ output: '<span class="success">✓ Next.js dev server started on http://localhost:3000</span>' });
+        addTerminalLine({ output: '<span class="info">  ▲ Next.js 14.0.4</span>' });
+        addTerminalLine({ output: '<span class="info">  - Local:   http://localhost:3000</span>' });
+        addTerminalLine({ output: '<span class="info">  - Ready in 842ms</span>' });
+        notify('Dev server started! ▲', 'success');
       } else {
-        addTerminalLine({ output: '<span class="info">⏹ Live Server stopped</span>' });
-        notify('Live Server stopped', 'info');
+        addTerminalLine({ output: '<span class="warn">⏹ Dev server stopped</span>' });
+        notify('Dev server stopped', 'info');
       }
       return next;
     });
@@ -1218,14 +1809,14 @@ function App() {
 
   const openFile = useCallback((path) => {
     setActiveFile(path);
-    setOpenFiles(prev => prev.find(f => f.path === path) ? prev : [...prev, { path, modified: false }]);
+    setOpenFiles(prev => prev.find(f => f.path===path) ? prev : [...prev, { path, modified:false }]);
   }, []);
 
   const closeTab = useCallback((path, e) => {
     e?.stopPropagation();
     setOpenFiles(prev => {
-      const next = prev.filter(f => f.path !== path);
-      if (activeFile === path) setActiveFile(next.length > 0 ? next[next.length-1].path : null);
+      const next = prev.filter(f => f.path!==path);
+      if (activeFile===path) setActiveFile(next.length>0?next[next.length-1].path:null);
       return next;
     });
   }, [activeFile]);
@@ -1238,11 +1829,10 @@ function App() {
     setFileSystem(fs => {
       const root = fs[rootKey];
       if (!root) return fs;
-      const newRoot = setNodeAtPath(root, parts.slice(1), { type:'file', content });
-      return { ...fs, [rootKey]: newRoot };
+      return { ...fs, [rootKey]: setNodeAtPath(root, parts.slice(1), { type:'file', content }) };
     });
     setFileContents(prev => ({ ...prev, [activeFile]: content }));
-    setOpenFiles(prev => prev.map(f => f.path === activeFile ? { ...f, modified:false } : f));
+    setOpenFiles(prev => prev.map(f => f.path===activeFile ? { ...f, modified:false } : f));
     notify(`Saved ${activeFile.split('/').pop()}`, 'success');
     if (settings.formatOnSave) editorRef.current?.getAction('editor.action.formatDocument')?.run();
     if (liveServer) refreshPreview();
@@ -1256,62 +1846,49 @@ function App() {
       if (!root) return fs;
       const node = getNodeAtPath(root, parts.slice(1));
       if (!node) return fs;
-      const newRoot = setNodeAtPath(root, parts.slice(1), { ...node, open: !node.open });
-      return { ...fs, [rootKey]: newRoot };
+      return { ...fs, [rootKey]: setNodeAtPath(root, parts.slice(1), { ...node, open: !node.open }) };
     });
   }, []);
 
   const handleRightClick = useCallback((e, path, node) => {
     e.preventDefault();
-    const isFolder = node.type === 'folder';
+    const isFolder = node.type==='folder';
     const items = [];
     if (isFolder) {
       items.push({ label:'New File', icon:'📄', action: () => setModal({ type:'newFile', parentPath:path }) });
       items.push({ label:'New Folder', icon:'📁', action: () => setModal({ type:'newFolder', parentPath:path }) });
       items.push('sep');
     }
-    if (!isFolder) {
-      items.push({ label:'Open', icon:'📖', action: () => openFile(path) });
-      items.push('sep');
-    }
-    items.push({ label:'Rename', icon:'✏️', shortcut:'F2', action: () => setRenamingPath(path) });
+    if (!isFolder) items.push({ label:'Open', icon:'📖', action: () => openFile(path) }, 'sep');
+    items.push({ label:'Rename', icon:'✏️', action: () => setRenamingPath(path) });
     items.push({ label:'Delete', icon:'🗑️', danger:true, action: () => {
       const parts = pathToArray(path);
       const rootKey = parts[0];
       setFileSystem(fs => {
-        if (parts.length === 1) { const { [rootKey]:_, ...rest } = fs; return rest; }
-        const newRoot = deleteNodeAtPath(fs[rootKey], parts.slice(1));
-        return { ...fs, [rootKey]: newRoot };
+        if (parts.length===1) { const { [rootKey]:_, ...rest } = fs; return rest; }
+        return { ...fs, [rootKey]: deleteNodeAtPath(fs[rootKey], parts.slice(1)) };
       });
       setOpenFiles(prev => prev.filter(f => !f.path.startsWith(path)));
       if (activeFile?.startsWith(path)) setActiveFile(null);
       notify(`Deleted ${path.split('/').pop()}`, 'info');
     }});
-    if (!isFolder) {
-      items.push('sep');
-      items.push({ label:'Copy Path', icon:'📋', action: () => { navigator.clipboard?.writeText(path); notify('Path copied!', 'info'); } });
-    }
     setCtxMenu({ x: e.clientX, y: e.clientY, items });
   }, [activeFile, openFile, notify]);
 
   const handleRenameCommit = useCallback((path, newName) => {
     setRenamingPath(null);
-    if (!newName || newName === path.split('/').pop()) return;
+    if (!newName || newName===path.split('/').pop()) return;
     const parts = pathToArray(path);
     const rootKey = parts[0];
     const oldName = parts[parts.length-1];
     setFileSystem(fs => {
-      if (parts.length === 1) {
-        const { [oldName]: node, ...rest } = fs;
-        return { ...rest, [newName]: node };
-      }
+      if (parts.length===1) { const { [oldName]: node, ...rest } = fs; return { ...rest, [newName]: node }; }
       const root = fs[rootKey];
       const parentParts = parts.slice(1,-1);
       const parent = getNodeAtPath(root, parentParts);
       if (!parent) return fs;
       const { [oldName]: nodeToRename, ...siblings } = parent.children;
-      const newParent = { ...parent, children: { ...siblings, [newName]: nodeToRename } };
-      return { ...fs, [rootKey]: setNodeAtPath(root, parentParts, newParent) };
+      return { ...fs, [rootKey]: setNodeAtPath(root, parentParts, { ...parent, children: { ...siblings, [newName]: nodeToRename } }) };
     });
     notify(`Renamed to ${newName}`, 'success');
   }, [notify]);
@@ -1321,236 +1898,222 @@ function App() {
     const { type, parentPath } = modal;
     const parts = pathToArray(parentPath);
     const rootKey = parts[0];
-    const isFile = type === 'newFile';
+    const isFile = type==='newFile';
     const ext = value.split('.').pop()?.toLowerCase();
-    const defaultContent = isFile ? (ext==='html'?`<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <title>Page</title>\n</head>\n<body>\n  <h1>Hello World</h1>\n</body>\n</html>`:ext==='css'?`/* ${value} styles */\n`:ext==='js'?`// ${value}\n`:'') : '';
+    const defContent = isFile ? (
+      ext==='tsx'||ext==='ts' ? `export default function Component() {\n  return <div>{/* ${value} */}</div>\n}\n` :
+      ext==='css' ? `/* ${value} */\n` : ext==='json' ? '{}' : ''
+    ) : '';
     setFileSystem(fs => {
       const root = fs[rootKey];
       const parentNode = getNodeAtPath(root, parts.slice(1));
-      if (!parentNode || !parentNode.children) return fs;
-      const newChild = isFile ? { type:'file', content:defaultContent } : { type:'folder', open:true, children:{} };
-      const newParent = { ...parentNode, children: { ...parentNode.children, [value]: newChild } };
-      return { ...fs, [rootKey]: setNodeAtPath(root, parts.slice(1), newParent) };
+      if (!parentNode||!parentNode.children) return fs;
+      const newChild = isFile ? { type:'file', content:defContent } : { type:'folder', open:true, children:{} };
+      return { ...fs, [rootKey]: setNodeAtPath(root, parts.slice(1), { ...parentNode, children: { ...parentNode.children, [value]: newChild } }) };
     });
     const newPath = `${parentPath}/${value}`;
-    if (isFile) { openFile(newPath); setFileContents(prev => ({ ...prev, [newPath]: defaultContent })); }
+    if (isFile) { openFile(newPath); setFileContents(prev => ({ ...prev, [newPath]: defContent })); }
     notify(`Created ${value}`, 'success');
     setModal(null);
   }, [modal, openFile, notify]);
+
+  const handleScaffoldCreate = useCallback((filename, content, subPath = '') => {
+    const rootKey = Object.keys(fileSystem)[0];
+    const basePath = subPath ? `${rootKey}/app/${subPath}` : `${rootKey}/components`;
+    setFileSystem(fs => {
+      const root = fs[rootKey];
+      const parts = subPath ? ['app', subPath] : ['components'];
+      const parentNode = getNodeAtPath(root, parts) || { type:'folder', open:true, children:{} };
+      const updatedParent = { ...parentNode, children: { ...(parentNode.children||{}), [filename]: { type:'file', content } } };
+      return { ...fs, [rootKey]: setNodeAtPath(root, parts, updatedParent) };
+    });
+    const newPath = `${basePath}/${filename}`;
+    openFile(newPath);
+    setFileContents(prev => ({ ...prev, [newPath]: content }));
+    notify(`Generated ${filename}`, 'success');
+  }, [fileSystem, openFile, notify]);
 
   const addTerminalLine = (line) => setTerminalLines(prev => [...prev, line]);
 
   const installPackage = useCallback((name, version) => {
     addTerminalLine({ cmd: `npm install ${name}` });
-    addTerminalLine({ output: `<span class="info">⟳ Fetching ${name}@${version}...</span>` });
+    addTerminalLine({ output: `<span class="info">⟳ Installing ${name}...</span>` });
     setTimeout(() => {
-      addTerminalLine({ output: `<span class="success">✓ Installed ${name}@${version}</span>` });
+      addTerminalLine({ output: `<span class="success">✓ + ${name}@${version}</span>` });
+      addTerminalLine({ output: `<span class="info">  added 1 package in 1.2s</span>` });
       setInstalledPackages(prev => prev.find(p => p.name===name) ? prev : [...prev, { name, version }]);
-      notify(`Installed ${name}@${version}`, 'success');
-    }, 1500);
+      notify(`Installed ${name}`, 'success');
+    }, 1400);
   }, [notify]);
 
   const removePackage = useCallback((name) => {
     addTerminalLine({ cmd: `npm uninstall ${name}` });
     setTimeout(() => {
-      addTerminalLine({ output: `<span class="success">✓ Removed ${name}</span>` });
+      addTerminalLine({ output: `<span class="success">✓ removed ${name}</span>` });
       setInstalledPackages(prev => prev.filter(p => p.name!==name));
     }, 600);
   }, []);
 
   const handleCommand = useCallback((cmd) => {
-    if (cmd === 'clear') { setTerminalLines([]); return; }
+    if (cmd==='clear') { setTerminalLines([]); return; }
     addTerminalLine({ cmd });
-    const [c, ...args] = cmd.trim().split(' ');
+    const [c, ...args] = cmd.trim().split(/\s+/);
     if (c==='help') {
-      addTerminalLine({ output: `<span class="info">Available commands:</span>
-  <span class="success">npm install &lt;pkg&gt;</span>   Install a package
-  <span class="success">npm uninstall &lt;pkg&gt;</span> Remove a package  
-  <span class="success">npm run start</span>       Start live server
-  <span class="success">ls</span>                  List files
-  <span class="success">cat &lt;file&gt;</span>         Print file contents
-  <span class="success">touch &lt;file&gt;</span>        Create a file
-  <span class="success">mkdir &lt;dir&gt;</span>         Create a directory
-  <span class="success">rm &lt;file&gt;</span>           Delete a file
-  <span class="success">pwd</span>                 Show current path
-  <span class="success">clear</span>               Clear terminal
-  <span class="success">echo &lt;text&gt;</span>        Print text
-  <span class="success">node --version</span>      Show Node version` });
-    } else if (c==='pwd') {
-      addTerminalLine({ output: '/workspace/my-app' });
-    } else if (c==='ls' || (c==='ls' && args[0]==='-la')) {
-      const rootKey = Object.keys(fileSystem)[0];
-      const files = rootKey ? Object.keys(fileSystem[rootKey].children||{}) : [];
-      addTerminalLine({ output: files.map(f => {
-        const n = fileSystem[rootKey].children[f];
-        return `<span class="${n.type==='folder'?'info':''}">  ${n.type==='folder'?'drwxr-xr-x':'  -rw-r--r--'}  ${f}</span>`;
-      }).join('\n') });
-    } else if (c==='node' && args[0]==='--version') {
-      addTerminalLine({ output: 'v20.11.0' });
-    } else if (c==='npm' && args[0]==='--version') {
-      addTerminalLine({ output: '10.2.4' });
-    } else if (c==='npm' && args[0]==='install' && args[1]) {
-      installPackage(args[1], PACKAGES_DB[args[1]]?.version || 'latest');
-    } else if (c==='npm' && args[0]==='uninstall' && args[1]) {
-      removePackage(args[1]);
-    } else if (c==='npm' && args[0]==='run' && (args[1]==='start'||args[1]==='dev')) {
+      addTerminalLine({ output: `<span class="info">Next.js commands:</span>
+  <span class="success">next dev</span>          Start dev server (F5)
+  <span class="success">next build</span>        Build for production
+  <span class="success">next start</span>        Start production server
+  <span class="success">next lint</span>         Run ESLint
+  <span class="success">npx next info</span>     Print env info
+  <span class="success">npm install &lt;pkg&gt;</span>  Install package
+  <span class="success">ls / cat / pwd</span>    File system commands
+  <span class="success">clear</span>             Clear terminal` });
+    } else if (c==='pwd') { addTerminalLine({ output: '/workspace/my-next-app' }); }
+    else if (c==='ls') {
+      const files = Object.keys(fileSystem['my-next-app']?.children||{});
+      addTerminalLine({ output: files.map(f => `  <span class="${fileSystem['my-next-app'].children[f].type==='folder'?'info':''}">${f}</span>`).join('\n') });
+    } else if ((c==='next'&&args[0]==='dev')||(c==='npm'&&args[0]==='run'&&args[1]==='dev')) {
       toggleLiveServer();
-    } else if (c==='npm' && args[0]==='run' && args[1]==='build') {
-      addTerminalLine({ output: '<span class="info">Building project...</span>' });
-      setTimeout(() => addTerminalLine({ output: '<span class="success">✓ Build complete!</span>' }), 1200);
-    } else if (c==='cat' && args[0]) {
-      const targetPath = `my-app/${args[0]}`;
-      const content = getFileContent(targetPath);
+    } else if (c==='next'&&args[0]==='build') {
+      addTerminalLine({ output: '<span class="info">▲ Next.js 14.0.4</span>' });
+      addTerminalLine({ output: '<span class="info">Creating an optimized production build...</span>' });
+      setTimeout(() => { addTerminalLine({ output: '<span class="success">✓ Compiled successfully!</span>' }); addTerminalLine({ output: '<span class="info">Route (app)                             Size     First Load JS</span>' }); addTerminalLine({ output: '  <span class="success">○</span> /                                   5.2 kB        92.3 kB' }); addTerminalLine({ output: '  <span class="success">○</span> /about                              1.2 kB        88.3 kB' }); addTerminalLine({ output: '  <span class="success">ƒ</span> /blog/[slug]                        800 B         87.9 kB' }); }, 2000);
+    } else if (c==='next'&&args[0]==='lint') {
+      addTerminalLine({ output: '<span class="success">✓ No ESLint warnings or errors</span>' });
+    } else if ((c==='tsc'||c==='npx'&&args[0]==='tsc')&&args.includes('--noEmit')) {
+      setTimeout(() => addTerminalLine({ output: '<span class="success">✓ TypeScript: no errors found</span>' }), 800);
+    } else if (c==='npm'&&args[0]==='install'&&args[1]) {
+      installPackage(args[1], NEXT_PACKAGES[args[1]]?.version||'latest');
+    } else if (c==='npm'&&args[0]==='uninstall'&&args[1]) {
+      removePackage(args[1]);
+    } else if (c==='node'&&args[0]==='--version') { addTerminalLine({ output: 'v20.11.0' }); }
+    else if (c==='npm'&&args[0]==='--version') { addTerminalLine({ output: '10.2.4' }); }
+    else if (c==='echo') { addTerminalLine({ output: args.join(' ') }); }
+    else if (c==='cat'&&args[0]) {
+      const content = getFileContent(`my-next-app/${args[0]}`);
       content ? addTerminalLine({ output: content.replace(/</g,'&lt;').replace(/>/g,'&gt;') }) :
-        addTerminalLine({ output: `<span class="error">cat: ${args[0]}: No such file</span>` });
-    } else if (c==='echo') {
-      addTerminalLine({ output: args.join(' ') });
-    } else if (c==='touch' && args[0]) {
-      const parts = `my-app/${args[0]}`.split('/');
-      setFileSystem(fs => {
-        const root = fs['my-app'];
-        return { ...fs, 'my-app': setNodeAtPath(root, parts.slice(1), { type:'file', content:'' }) };
-      });
-      addTerminalLine({ output: `<span class="success">Created ${args[0]}</span>` });
-    } else if (c==='mkdir' && args[0]) {
-      const parts = `my-app/${args[0]}`.split('/');
-      setFileSystem(fs => {
-        const root = fs['my-app'];
-        return { ...fs, 'my-app': setNodeAtPath(root, parts.slice(1), { type:'folder', open:true, children:{} }) };
-      });
-      addTerminalLine({ output: `<span class="success">Created directory ${args[0]}</span>` });
-    } else if (c==='rm' && args[0]) {
-      addTerminalLine({ output: `<span class="success">Removed ${args[0]}</span>` });
-    } else if (c==='') {
-      // noop
-    } else {
-      addTerminalLine({ output: `<span class="error">zsh: command not found: ${c}</span>`, type:'error' });
-    }
+        addTerminalLine({ output: `<span class="error">cat: ${args[0]}: No such file</span>`, type:'error' });
+    } else if (c==='') {}
+    else addTerminalLine({ output: `<span class="error">zsh: command not found: ${c}</span>`, type:'error' });
   }, [fileSystem, getFileContent, installPackage, removePackage, toggleLiveServer]);
 
-  // ── MENU ACTIONS ──
   const handleMenuAction = useCallback((action) => {
     switch(action) {
       case 'newFile': setModal({ type:'newFile', parentPath: Object.keys(fileSystem)[0] }); break;
       case 'newFolder': setModal({ type:'newFolder', parentPath: Object.keys(fileSystem)[0] }); break;
       case 'save': saveFile(); break;
-      case 'saveAll': saveFile(); notify('All files saved', 'success'); break;
       case 'closeTab': if (activeFile) closeTab(activeFile); break;
       case 'undo': editorRef.current?.trigger('keyboard','undo',null); break;
       case 'redo': editorRef.current?.trigger('keyboard','redo',null); break;
-      case 'find': setShowFind(f => !f); break;
+      case 'find': setShowFind(f=>!f); break;
       case 'format': editorRef.current?.getAction('editor.action.formatDocument')?.run(); break;
-      case 'togglePreview': setShowPreview(v => !v); break;
-      case 'toggleTerminal': setPanelVisible(v => !v); break;
-      case 'toggleSidebar': setSidebarVisible(v => !v); break;
+      case 'togglePreview': setShowPreview(v=>!v); break;
+      case 'toggleTerminal': setPanelVisible(v=>!v); break;
+      case 'toggleSidebar': setSidebarVisible(v=>!v); break;
       case 'startServer': if (!liveServer) toggleLiveServer(); break;
       case 'stopServer': if (liveServer) toggleLiveServer(); break;
-      case 'build': handleCommand('npm run build'); break;
-      case 'install': handleCommand('npm install'); break;
-      case 'clearTerminal': setTerminalLines([]); break;
-      case 'npmStart': handleCommand('npm run start'); break;
-      case 'about': notify('WebIDE v2.0.0 — VS Code-like browser IDE', 'info'); break;
-      case 'shortcuts': notify('Ctrl+S: Save | F5: Live Server | Ctrl+F: Find | Ctrl+B: Sidebar', 'info'); break;
+      case 'build': handleCommand('next build'); break;
+      case 'lint': handleCommand('next lint'); break;
+      case 'typecheck': handleCommand('tsc --noEmit'); break;
+      case 'scaffold': setSidebarTab('scaffold'); setSidebarVisible(true); break;
+      case 'showRoutes': setSidebarTab('routes'); setSidebarVisible(true); break;
+      case 'addApiRoute': handleScaffoldCreate('route.ts', getScaffoldContent('api-route','example'), 'api/example'); break;
+      case 'addPage': setModal({ type:'newFile', parentPath:'my-next-app/app' }); break;
     }
-  }, [fileSystem, saveFile, activeFile, closeTab, liveServer, toggleLiveServer, handleCommand, notify]);
+  }, [fileSystem, saveFile, activeFile, closeTab, liveServer, toggleLiveServer, handleCommand, handleScaffoldCreate]);
 
-  // Panel resize
   const handleResizeStart = (e) => {
-    const startY = e.clientY;
-    const startH = panelH;
-    const onMove = e => setPanelH(Math.max(80, Math.min(500, startH + startY - e.clientY)));
-    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    const startY=e.clientY, startH=panelH;
+    const onMove = e => setPanelH(Math.max(80, Math.min(500, startH+startY-e.clientY)));
+    const onUp = () => { window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); };
+    window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
   };
 
-  // Split resize
-  const splitRef = useRef(null);
-
-  const updateSettings = useCallback((key, value) => {
-    setSettings(s => ({ ...s, [key]: value }));
-  }, []);
-
   const renderSidebar = () => {
-    if (sidebarTab === 'explorer') return (
+    if (sidebarTab==='explorer') return (
       <>
         <div className="sidebar-header">
           <span>Explorer</span>
           <div className="sidebar-header-actions">
-            <button className="icon-btn" title="New File (Ctrl+N)" onClick={() => setModal({ type:'newFile', parentPath:Object.keys(fileSystem)[0] })}>📄+</button>
-            <button className="icon-btn" title="New Folder" onClick={() => setModal({ type:'newFolder', parentPath:Object.keys(fileSystem)[0] })}>📁+</button>
+            <button className="icon-btn" title="New File" onClick={() => setModal({ type:'newFile', parentPath:Object.keys(fileSystem)[0] })}>📄</button>
+            <button className="icon-btn" title="New Folder" onClick={() => setModal({ type:'newFolder', parentPath:Object.keys(fileSystem)[0] })}>📁</button>
           </div>
         </div>
         <div className="sidebar-content">
           {Object.entries(fileSystem).map(([name, node]) => (
             <FileTreeItem key={name} name={name} node={node} path={name} depth={0}
               selectedFile={activeFile} onSelect={openFile} onToggle={toggleFolder}
-              onRightClick={handleRightClick} renamingPath={renamingPath} onRenameCommit={handleRenameCommit} />
+              onRightClick={handleRightClick} renamingPath={renamingPath} onRenameCommit={handleRenameCommit}/>
           ))}
         </div>
       </>
     );
-    if (sidebarTab === 'search') return (
+    if (sidebarTab==='search') return (
       <>
         <div className="sidebar-header"><span>Search</span></div>
-        <div className="sidebar-content" style={{overflow:'visible'}}>
-          <SearchPanel fileSystem={fileSystem} onOpenFile={openFile} />
-        </div>
+        <div className="sidebar-content" style={{overflow:'visible'}}><SearchPanel fileSystem={fileSystem} onOpenFile={openFile}/></div>
       </>
     );
-    if (sidebarTab === 'npm') return (
+    if (sidebarTab==='scaffold') return (
       <>
-        <div className="sidebar-header"><span>NPM</span></div>
-        <div className="sidebar-content"><NpmPanel packages={installedPackages} onInstall={installPackage} onRemove={removePackage} /></div>
+        <div className="sidebar-header"><span>Generate</span><span style={{fontSize:9,background:'var(--accent)',color:'#fff',padding:'1px 5px',borderRadius:3,fontWeight:700}}>NEXT</span></div>
+        <div className="sidebar-content"><ScaffoldPanel fileSystem={fileSystem} onCreateFile={handleScaffoldCreate} onOpenFile={openFile}/></div>
       </>
     );
-    if (sidebarTab === 'ai') return (
+    if (sidebarTab==='routes') return (
+      <>
+        <div className="sidebar-header"><span>Route Map</span></div>
+        <div className="sidebar-content"><RouteMapPanel fileSystem={fileSystem} onOpenFile={openFile}/></div>
+      </>
+    );
+    if (sidebarTab==='npm') return (
+      <>
+        <div className="sidebar-header"><span>Packages</span></div>
+        <div className="sidebar-content"><NpmPanel packages={installedPackages} onInstall={installPackage} onRemove={removePackage}/></div>
+      </>
+    );
+    if (sidebarTab==='ai') return (
       <>
         <div className="sidebar-header"><span>AI Copilot</span></div>
         <div className="sidebar-content" style={{display:'flex',flexDirection:'column',height:'calc(100% - 34px)',overflow:'hidden'}}>
-          <AICopilotPanel currentFile={activeFile?.split('/').pop()} currentContent={activeFile ? getFileContent(activeFile) : ''} />
+          <AIPanel currentFile={activeFile?.split('/').pop()} currentContent={activeFile ? getFileContent(activeFile) : ''}/>
         </div>
-      </>
-    );
-    if (sidebarTab === 'settings') return (
-      <>
-        <div className="sidebar-header"><span>Settings</span></div>
-        <div className="sidebar-content"><SettingsPanel settings={settings} onUpdate={updateSettings} /></div>
       </>
     );
   };
 
   const breadcrumbs = activeFile ? activeFile.split('/') : [];
+  const activeFileModified = openFiles.find(f => f.path===activeFile)?.modified;
 
   return (
     <div className="app">
       {/* TITLEBAR */}
       <div className="titlebar">
         <div className="titlebar-logo">
-          <div className="logo-icon">W</div>
-          <span>WebIDE</span>
+          <div className="logo-icon">▲</div>
+          <span>NextIDE</span>
+          <span className="logo-next-badge">APP ROUTER</span>
         </div>
-        <MenuBar onAction={handleMenuAction} />
+        <MenuBar onAction={handleMenuAction}/>
         <div className="titlebar-center">
           <div className="titlebar-breadcrumb">
-            {liveServer && <><span style={{color:'var(--accent2)',fontSize:11,fontWeight:600}}>⚡ LIVE</span><span>/</span></>}
-            <span>{activeFile || 'No file open'}</span>
+            {liveServer && <><span style={{color:'var(--green)',fontWeight:700}}>LIVE</span><span style={{color:'var(--border2)'}}>·</span></>}
+            <span style={{color:'var(--text3)'}}>localhost:3000</span>
+            {activeFile && <><span style={{color:'var(--border2)'}}>·</span><span style={{color:'var(--text2)'}}>{activeFile.split('/').pop()}</span></>}
+            {activeFileModified && <span style={{color:'var(--accent-light)',fontSize:9}}>●</span>}
           </div>
         </div>
         <div className="titlebar-actions">
           {liveServer ? (
-            <button className="titlebar-btn red" onClick={toggleLiveServer}>
-              <div className="live-dot" />
-              Stop Server
-            </button>
+            <button className="titlebar-btn danger" onClick={toggleLiveServer}><div className="live-dot"/>Stop</button>
           ) : (
-            <button className="titlebar-btn green" onClick={toggleLiveServer}>▶ Live Server</button>
+            <button className="titlebar-btn primary" onClick={toggleLiveServer}>▶ Dev Server</button>
           )}
-          <button className="titlebar-btn" onClick={saveFile}>💾 Save</button>
-          <button className="titlebar-btn" onClick={() => { setShowPreview(v => !v); if (!showPreview && !liveServer) refreshPreview(); }}>
-            {showPreview ? '⊟ Preview' : '⊞ Preview'}
+          <button className="titlebar-btn" onClick={saveFile}>Save</button>
+          <button className="titlebar-btn" onClick={() => handleCommand('next build')}>Build</button>
+          <button className="titlebar-btn" onClick={() => { setShowPreview(v=>!v); if (!showPreview) refreshPreview(); }}>
+            {showPreview?'Hide':'Preview'}
           </button>
-          <button className="titlebar-btn" onClick={() => handleCommand('npm run build')}>⚡ Build</button>
         </div>
       </div>
 
@@ -1560,26 +2123,23 @@ function App() {
         <div className="activity-bar">
           {[
             { id:'explorer', icon:'📁', label:'Explorer' },
-            { id:'search', icon:'🔍', label:'Search (Ctrl+Shift+F)' },
-            { id:'npm', icon:'📦', label:'NPM Packages' },
+            { id:'search', icon:'🔍', label:'Search' },
+            { id:'routes', icon:'🗺', label:'Route Map' },
+            { id:'scaffold', icon:'⚡', label:'Generate Next.js Code' },
+            { id:'npm', icon:'📦', label:'Packages' },
             { id:'ai', icon:'🤖', label:'AI Copilot' },
-            { id:'settings', icon:'⚙️', label:'Settings' },
           ].map(({ id, icon, label }) => (
             <div key={id} className={`activity-icon ${sidebarTab===id&&sidebarVisible?'active':''}`} title={label}
               onClick={() => { if (sidebarTab===id) setSidebarVisible(v=>!v); else { setSidebarTab(id); setSidebarVisible(true); } }}>
               {icon}
             </div>
           ))}
-          <div className="activity-spacer" />
+          <div className="activity-spacer"/>
           <div className="activity-icon" title="Toggle Terminal (Ctrl+`)" onClick={() => setPanelVisible(v=>!v)}>🖥</div>
         </div>
 
         {/* SIDEBAR */}
-        {sidebarVisible && (
-          <div className="sidebar" style={{ width: 'var(--sidebar-w)' }}>
-            {renderSidebar()}
-          </div>
-        )}
+        {sidebarVisible && <div className="sidebar">{renderSidebar()}</div>}
 
         {/* MAIN AREA */}
         <div className="main-area">
@@ -1587,15 +2147,17 @@ function App() {
           <div className="tabs-bar">
             {openFiles.map(({ path, modified }) => {
               const name = path.split('/').pop();
+              const routeType = getNextRouteType(name);
               return (
                 <div key={path} className={`tab ${activeFile===path?'active':''} ${modified?'tab-modified':''}`} onClick={() => openFile(path)}>
-                  <span className="tab-icon">{getFileIcon(name)}</span>
+                  <span style={{fontSize:11}}>{getFileIcon(name)}</span>
                   <span className="tab-name">{name}</span>
-                  <span className="tab-close" onClick={e => closeTab(path, e)}>✕</span>
+                  {routeType && <span style={{fontSize:9,opacity:0.6,color:'var(--accent-light)'}}>{routeType[0].toUpperCase()}</span>}
+                  <span className="tab-close" onClick={e => closeTab(path,e)}>✕</span>
                 </div>
               );
             })}
-            {openFiles.length === 0 && <div style={{padding:'0 12px',fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center'}}>No open files</div>}
+            {openFiles.length===0 && <div style={{padding:'0 12px',fontSize:12,color:'var(--text3)',display:'flex',alignItems:'center'}}>No open files</div>}
           </div>
 
           {/* BREADCRUMB */}
@@ -1603,7 +2165,7 @@ function App() {
             <div className="breadcrumb">
               {breadcrumbs.map((seg, i) => (
                 <React.Fragment key={i}>
-                  {i > 0 && <span className="bc-sep">›</span>}
+                  {i>0 && <span className="bc-sep">›</span>}
                   <span className={`bc-item ${i===breadcrumbs.length-1?'last':''}`}>{seg}</span>
                 </React.Fragment>
               ))}
@@ -1613,89 +2175,69 @@ function App() {
           {/* EDITOR + PREVIEW */}
           <div className="editor-panel-area">
             <div className="split-view" style={{flex:1,overflow:'hidden'}}>
-              {/* EDITOR */}
               <div className="split-editor">
                 {!activeFile && (
                   <div className="welcome">
-                    <div className="welcome-logo">⬡</div>
-                    <div className="welcome-title">WebIDE</div>
-                    <div className="welcome-subtitle">Browser-based IDE with Live Server</div>
-                    <div className="welcome-actions">
+                    <div className="welcome-hero">
+                      <div className="welcome-title">▲ NextIDE</div>
+                      <div className="welcome-subtitle">Next.js 14 App Router · Server Components · TypeScript</div>
+                    </div>
+                    <div className="welcome-grid">
                       {[
-                        { icon:'▶', label:'Start Live Server (F5)', action: toggleLiveServer },
-                        { icon:'📄', label:'New File', action: () => setModal({ type:'newFile', parentPath:Object.keys(fileSystem)[0] }) },
-                        { icon:'📦', label:'Install Package', action: () => setSidebarTab('npm') },
-                        { icon:'🤖', label:'AI Copilot', action: () => setSidebarTab('ai') },
-                      ].map(({ icon, label, action }) => (
-                        <div key={label} className="welcome-action" onClick={action}>
-                          <span className="welcome-action-icon">{icon}</span><span>{label}</span>
+                        { icon:'▶', text:'Start Dev Server', action: toggleLiveServer },
+                        { icon:'🗺', text:'View Route Map', action: () => { setSidebarTab('routes'); setSidebarVisible(true); } },
+                        { icon:'⚡', text:'Generate Component', action: () => { setSidebarTab('scaffold'); setSidebarVisible(true); } },
+                        { icon:'🤖', text:'AI Copilot', action: () => { setSidebarTab('ai'); setSidebarVisible(true); } },
+                      ].map(({ icon, text, action }) => (
+                        <div key={text} className="welcome-action" onClick={action}>
+                          <span className="welcome-action-icon">{icon}</span>
+                          <span className="welcome-action-text">{text}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-                <div id="monaco-editor" style={{ display:activeFile?'block':'none', width:'100%', height:'100%' }} />
-                {/* Find Widget */}
+                <div id="monaco-editor" style={{ display:activeFile?'block':'none', width:'100%', height:'100%' }}/>
                 {showFind && (
                   <div className="find-widget">
-                    <input className="find-input" placeholder="Find..." value={findQuery}
-                      autoFocus onChange={e => setFindQuery(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Escape') setShowFind(false);
-                        if (e.key === 'Enter') editorRef.current?.getAction('editor.action.nextMatchFindAction')?.run();
-                      }} />
+                    <input className="find-input" placeholder="Find..." value={findQuery} autoFocus
+                      onChange={e => setFindQuery(e.target.value)}
+                      onKeyDown={e => { if (e.key==='Escape') setShowFind(false); if (e.key==='Enter') editorRef.current?.getAction('editor.action.nextMatchFindAction')?.run(); }}/>
                     <button className="find-btn" onClick={() => editorRef.current?.getAction('editor.action.previousMatchFindAction')?.run()}>↑</button>
                     <button className="find-btn" onClick={() => editorRef.current?.getAction('editor.action.nextMatchFindAction')?.run()}>↓</button>
                     <button className="find-btn" onClick={() => setShowFind(false)}>✕</button>
                   </div>
                 )}
               </div>
-              {/* SPLIT DIVIDER + PREVIEW */}
-              {showPreview && (
-                <>
-                  <div className="split-divider" />
-                  <LivePreviewPane
-                    html={previewHtml}
-                    onClose={() => setShowPreview(false)}
-                    onRefresh={refreshPreview}
-                    isLive={liveServer}
-                  />
-                </>
-              )}
+              {showPreview && <>
+                <div className="split-divider"/>
+                <LivePreviewPane html={previewHtml} onClose={() => setShowPreview(false)} onRefresh={refreshPreview} isLive={liveServer}/>
+              </>}
             </div>
 
             {/* PANEL */}
             {panelVisible && (
               <div className="panel" style={{ height: panelH }}>
-                <div className="panel-resize-handle" onMouseDown={handleResizeStart} />
+                <div className="panel-resize-handle" onMouseDown={handleResizeStart}/>
                 <div className="panel-tabs">
                   {[
                     { id:'terminal', label:'Terminal', icon:'$' },
-                    { id:'problems', label:'Problems', icon:'⚠' },
+                    { id:'problems', label:'Problems', icon:'◎' },
                   ].map(({ id, label, icon }) => (
                     <div key={id} className={`panel-tab ${panelTab===id?'active':''}`} onClick={() => setPanelTab(id)}>
-                      <span>{icon}</span>{label}
-                      {id==='problems' && problems.length>0 && <span style={{background:'var(--accent3)',color:'#fff',borderRadius:'50%',width:14,height:14,fontSize:9,display:'inline-flex',alignItems:'center',justifyContent:'center',marginLeft:4}}>{problems.length}</span>}
+                      <span style={{opacity:0.7}}>{icon}</span>{label}
                     </div>
                   ))}
-                  <div style={{flex:1}} />
-                  <button className="icon-btn" title="Clear" onClick={() => setTerminalLines([])}>🗑</button>
-                  <button className="icon-btn" title="Close Panel" onClick={() => setPanelVisible(false)}>✕</button>
+                  <div style={{flex:1}}/>
+                  <button className="icon-btn" onClick={() => setTerminalLines([])}>🗑</button>
+                  <button className="icon-btn" onClick={() => setPanelVisible(false)}>✕</button>
                 </div>
-                {panelTab==='terminal' && <Terminal lines={terminalLines} onCommand={handleCommand} />}
+                {panelTab==='terminal' && <Terminal lines={terminalLines} onCommand={handleCommand}/>}
                 {panelTab==='problems' && (
                   <div className="panel-content">
-                    {problems.length===0 ? (
-                      <div style={{display:'flex',alignItems:'center',gap:8,color:'var(--accent2)'}}>
-                        <span>✓</span><span style={{fontSize:12}}>No problems detected</span>
-                      </div>
-                    ) : problems.map((p,i) => (
-                      <div key={i} className="problem-item">
-                        <span className="problem-icon">{p.type==='error'?'🔴':p.type==='warning'?'🟡':'🔵'}</span>
-                        <span className="problem-msg">{p.message}</span>
-                        <span className="problem-loc">{p.file}:{p.line}</span>
-                      </div>
-                    ))}
+                    <div style={{display:'flex',alignItems:'center',gap:8,color:'var(--green)'}}>
+                      <span>✓</span><span style={{fontSize:12}}>No TypeScript errors</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1706,45 +2248,43 @@ function App() {
 
       {/* STATUS BAR */}
       <div className="status-bar">
-        <div className="status-item" onClick={toggleLiveServer} title="Toggle Live Server">
-          <div className={`status-dot ${liveServer?'live':''}`} />
-          {liveServer ? 'Live Server ON' : 'Live Server OFF'}
+        <div className="status-item" onClick={toggleLiveServer}>
+          <div className={`status-dot ${liveServer?'live':''}`}/>
+          {liveServer ? '▲ localhost:3000' : '▲ Next.js 14'}
         </div>
-        <div className="status-item" onClick={() => setSidebarTab('npm')}>
-          📦 {installedPackages.length} packages
+        <div className="status-item" onClick={() => { setSidebarTab('routes'); setSidebarVisible(true); }}>
+          App Router
         </div>
         <div className="status-item">⎇ main</div>
-        <div className="status-spacer" />
+        <div className="status-spacer"/>
         {activeFile && <>
           <div className="status-item">{currentLang}</div>
           <div className="status-item">Ln {cursorInfo.line}, Col {cursorInfo.col}</div>
           <div className="status-item">UTF-8</div>
-          <div className="status-item" onClick={() => updateSettings('tabSize', settings.tabSize===2?4:2)}>Spaces: {settings.tabSize}</div>
-          <div className="status-item" onClick={() => updateSettings('wordWrap', !settings.wordWrap)}>
-            {settings.wordWrap ? 'Wrap: On' : 'Wrap: Off'}
-          </div>
+          <div className="status-item" onClick={() => editorRef.current?.getAction('editor.action.formatDocument')?.run()}>Format</div>
         </>}
-        <div className="status-item" onClick={() => setShowFind(v=>!v)}>🔍 Find</div>
-        <div className="status-item" onClick={() => editorRef.current?.getAction('editor.action.formatDocument')?.run()}>⚡ Format</div>
+        <div className="status-item" onClick={() => { setSidebarTab('scaffold'); setSidebarVisible(true); }}>⚡ Generate</div>
       </div>
 
       {/* OVERLAYS */}
-      {ctxMenu && <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenu.items} onClose={() => setCtxMenu(null)} />}
+      {ctxMenu && <ContextMenu x={ctxMenu.x} y={ctxMenu.y} items={ctxMenu.items} onClose={() => setCtxMenu(null)}/>}
       {modal && (
         <Modal
           title={modal.type==='newFile'?'New File':'New Folder'}
-          placeholder={modal.type==='newFile'?'filename.html':'folder-name'}
+          desc={modal.type==='newFile'?'Use .tsx for React components, .ts for utilities, route.ts for API routes':''}
+          placeholder={modal.type==='newFile'?'page.tsx or MyComponent.tsx':'folder-name'}
           confirmLabel="Create"
           onConfirm={handleModalConfirm}
           onCancel={() => setModal(null)}
         />
       )}
-      <Notifications notes={notifications} />
+      <Notifications notes={notifications}/>
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>
